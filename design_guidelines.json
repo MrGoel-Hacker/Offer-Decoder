@@ -1,0 +1,140 @@
+{
+  "project_name": "Offer Decode",
+  "app_type": "saas_app",
+  "archetype": "ORGANIC_PRECISION_DARK",
+  "design_theme": {
+    "mode": "dark",
+    "primary_accent": "#10B981",
+    "accent_hover": "#059669",
+    "accent_glow": "rgba(16, 185, 129, 0.15)",
+    "background_base": "#090D16",
+    "surface_card": "#111827",
+    "surface_card_border": "#1F2937",
+    "surface_card_hover": "#1E293B",
+    "text_primary": "#F9FAFB",
+    "text_secondary": "#9CA3AF",
+    "text_muted": "#6B7280",
+    "status_warning": "#F59E0B",
+    "status_danger": "#EF4444",
+    "status_info": "#3B82F6",
+    "status_success": "#10B981"
+  },
+  "typography": {
+    "heading_font": "Space Grotesk, sans-serif",
+    "body_font": "Plus Jakarta Sans, sans-serif",
+    "mono_font": "JetBrains Mono, monospace",
+    "scale": {
+      "h1": "text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-50",
+      "h2": "text-xl sm:text-2xl font-bold tracking-tight text-slate-100",
+      "h3": "text-lg sm:text-xl font-semibold text-slate-200",
+      "h4": "text-base font-semibold text-slate-200",
+      "body": "text-sm sm:text-base text-slate-300 leading-relaxed",
+      "small": "text-xs text-slate-400 font-medium",
+      "headline_number": "text-4xl sm:text-5xl font-black tracking-tight text-emerald-400 font-mono"
+    }
+  },
+  "indian_formatting": {
+    "currency_symbol": "₹",
+    "rule": "Always use Indian numbering system (e.g. ₹74,109 / ₹12,50,000 / 1.2 Lakh / 15 Lakhs). Never standard US comma separation (1,000,000 is invalid; use 10,00,000).",
+    "code_example": "new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)"
+  },
+  "layout_and_spacing": {
+    "container": "max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8",
+    "header_nav": "sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800 px-4 py-3 flex items-center justify-between",
+    "input_mode_grid": "grid grid-cols-1 sm:grid-cols-2 gap-4 my-6",
+    "results_container": "space-y-6 max-w-3xl mx-auto",
+    "card_padding": "p-5 sm:p-7 rounded-2xl border border-slate-800 bg-slate-900/90 shadow-xl"
+  },
+  "key_components": [
+    {
+      "name": "HeaderNav",
+      "purpose": "App header with brand badge ('Offer Decode'), Indian currency tag, and Quick Reset / New Scan button.",
+      "file_path": "src/components/HeaderNav.js"
+    },
+    {
+      "name": "LandingHero",
+      "purpose": "Two-line value proposition statement + 4 input mode selection cards + Quick scan (Beta) regex prefill option.",
+      "file_path": "src/components/LandingHero.js"
+    },
+    {
+      "name": "InputModesContainer",
+      "purpose": "Tabs/Cards for Paste Text, Upload PDF, Upload Images, and Manual Entry Form (CTC, Basic, HRA, Employer PF, Gratuity, Variable Pay, Joining Bonus, ESOPs/yr, Non-cash, Notes).",
+      "file_path": "src/components/InputModesContainer.js"
+    },
+    {
+      "name": "HeadlineSalaryCard",
+      "purpose": "Big, bold card displaying monthly fixed in-hand salary (e.g., ₹74,109/mo) and with-variable monthly total, plus a clear one-line 'how we got this' explanation.",
+      "file_path": "src/components/HeadlineSalaryCard.js"
+    },
+    {
+      "name": "CTCBreakdownStackedBar",
+      "purpose": "Visual stacked progress/distribution bar showing Fixed In-hand vs Taxes vs Employer PF/Gratuity vs ESOPs vs Variable Pay.",
+      "file_path": "src/components/CTCBreakdownStackedBar.js"
+    },
+    {
+      "name": "CTCBreakdownTable",
+      "purpose": "Interactive line-item table comparing Annual vs Monthly values for all CTC components with tooltips/labels.",
+      "file_path": "src/components/CTCBreakdownTable.js"
+    },
+    {
+      "name": "TaxAssumptionsPanel",
+      "purpose": "Detailed tax calculation breakdown (Taxable income, regime toggle, slab tax, Sec 87A rebate, Cess 4%, Total annual tax) with live editable sliders/inputs (e.g., 80C, HRA claimed, regime switch).",
+      "file_path": "src/components/TaxAssumptionsPanel.js"
+    },
+    {
+      "name": "RedFlagsCard",
+      "purpose": "Card highlighting detected offer red flags (clawbacks, long notice periods, variable pay traps, unrealistic ESOP cliff) with 'Why it matters' and exact 'What to ask HR' scripts.",
+      "file_path": "src/components/RedFlagsCard.js"
+    },
+    {
+      "name": "NegotiationTipsCard",
+      "purpose": "Actionable, customized negotiation tactics & email templates based on identified weak spots in the offer.",
+      "file_path": "src/components/NegotiationTipsCard.js"
+    },
+    {
+      "name": "ShareReportModal",
+      "purpose": "Generates persistent 90-day shareable report link with copy-to-clipboard button and social sharing buttons.",
+      "file_path": "src/components/ShareReportModal.js"
+    }
+  ],
+  "visual_enhancers": {
+    "css_graphics_only": true,
+    "images_allowed": false,
+    "svg_icon_library": "lucide-react",
+    "glow_effects": "Use subtle inset and border gradients like border-emerald-500/30 hover:border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.1)]",
+    "badge_styles": {
+      "danger": "bg-red-500/10 text-red-400 border border-red-500/30 px-2.5 py-1 rounded-full text-xs font-semibold",
+      "warning": "bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-semibold",
+      "success": "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-semibold",
+      "info": "bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2.5 py-1 rounded-full text-xs font-semibold"
+    }
+  },
+  "testing_requirements": {
+    "mandatory_data_testid": true,
+    "examples": [
+      "data-testid=\"landing-hero-title\"",
+      "data-testid=\"input-mode-paste-tab\"",
+      "data-testid=\"input-mode-pdf-tab\"",
+      "data-testid=\"input-mode-image-tab\"",
+      "data-testid=\"input-mode-manual-tab\"",
+      "data-testid=\"quick-scan-sample-button\"",
+      "data-testid=\"offer-paste-textarea\"",
+      "data-testid=\"decode-offer-button\"",
+      "data-testid=\"headline-monthly-salary\"",
+      "data-testid=\"ctc-breakdown-table\"",
+      "data-testid=\"tax-panel-container\"",
+      "data-testid=\"red-flags-container\"",
+      "data-testid=\"share-report-button\""
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build 'Offer Decode' as a slick, dark-mode mobile-first single-page SaaS tool.",
+    "Strictly follow Indian currency formatting (₹, Lakhs, Crores, 10,00,000 comma separators) across all salary numbers.",
+    "NO external raster or AI images. Use SVG icons (lucide-react) and clean Tailwind styling.",
+    "Provide 4 distinct input tabs: Paste Text, PDF Upload, Image OCR/Upload, Manual Form, plus a prominent 'Quick scan (Beta - sample offer)' button that pre-fills realistic offer text.",
+    "Ensure real-time tax recalculation when user changes assumptions (New vs Old Tax Regime, 80C deductions, Section 10 HRA exemption).",
+    "Display red flags with clear 'Why it matters' accordion/cards and exact copyable 'What to ask HR' scripts.",
+    "Implement persistent sharing using localStorage or backend state with 90-day expiry calculation indicator.",
+    "Add data-testid to every interactive component, input field, tab, action button, and key metric card."
+  ]
+}
