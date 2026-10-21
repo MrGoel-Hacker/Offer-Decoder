@@ -3,15 +3,17 @@ services:
     name: offer-decode
     runtime: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install -r backend/requirements.txt && cd frontend && yarn install --frozen-lockfile && yarn build
     startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: GENERATE_SOURCEMAP
+        value: "false"
       - key: MONGO_URL
         sync: false
       - key: DB_NAME
         value: offerdecode
       - key: CORS_ORIGINS
-        value: "*"
+        value: "https://offerdecoder.online"
       - key: OPENROUTER_API_KEY
         sync: false
       - key: APP_PUBLIC_URL
