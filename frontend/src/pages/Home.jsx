@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { http } from "@/lib/api";
 import { ModeCards } from "@/components/ModeCards";
 import { PasteMode } from "@/components/PasteMode";
@@ -53,6 +54,10 @@ export default function Home() {
     <main className="max-w-3xl mx-auto px-5" data-testid="landing-page">
       <Hero limits={limits} />
       <ModeCards active={mode} onPick={(m) => { setMode(m); if (m === "manual") setPrefill(null); }} />
+      <p className="mt-3 text-center text-[11px] text-slate-500 fade-up" style={{ animationDelay: "400ms" }} data-testid="upload-privacy-note">
+        Uploads are processed in memory and never stored.{" "}
+        <Link to="/privacy" className="text-slate-400 underline underline-offset-2 hover:text-emerald-400">How your letter is handled</Link>
+      </p>
       <div className="mt-6">
         {mode === "paste" && <PasteMode {...props} />}
         {mode === "pdf" && <PdfMode {...props} />}
