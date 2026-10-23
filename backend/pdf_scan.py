@@ -35,5 +35,7 @@ def render_pdf_pages(data: bytes):
         pdf.close()
         return out, ""
     except Exception as e:
-        logger.warning("pdf render failed: %s", type(e).__name__)
-        return [], "render-" + type(e).__name__
+        logger.warning("pdf render failed:\n%s", traceback.format_exc())
+        frames = traceback.extract_tb(e.__traceback__)
+        loc = f"{frames[-1].filename.split('/')[-1]}:{frames[-1].lineno}" if frames else "?"
+        return [], "render-" + (type(e).__name__ + "@" + loc + " " + str(e))[:150]
