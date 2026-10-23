@@ -27,6 +27,20 @@ UNAVAILABLE_MSG = "AI couldn't read this right now, use Quick scan or manual ent
 NOT_CONFIGURED_MSG = "AI extraction is not switched on yet, use Quick scan or manual entry"
 
 NUM_KEYS = ["ctc", "basic", "hra", "employerPF", "gratuity", "variablePay", "joiningBonus", "esopsPerYear", "otherNonCash"]
+NUM_KEYS_US = ["baseSalary", "targetBonus", "signingBonus", "rsuPerYear", "k401"]
+
+US_SYSTEM_PROMPT = (
+    "You extract structured data from United States job offer letters. Reply with ONLY one JSON object, no prose, with keys: "
+    "baseSalary, targetBonus, signingBonus, rsuPerYear, k401 (all ANNUAL amounts in USD as plain numbers, 0 if absent; "
+    "convert monthly or biweekly figures to annual; targetBonus = target annual cash bonus (if given as a % of base, compute the amount); "
+    "signingBonus = one-time sign-on amount; rsuPerYear = total equity grant value divided by vesting years; "
+    "k401 = the employee's own stated 401(k) contribution per year, 0 if not stated - never the employer match), "
+    "state (2-letter US state code of the work location, '' if absent), "
+    "company (string, '' if absent), role (string, '' if absent), and flags (array of short strings, max 10, about risky clauses: "
+    "non-compete or non-solicit, bonus/equity clawback, signing-bonus repayment, vesting cliff, relocation repayment, "
+    "at-will termination quirks, mandatory arbitration, anything else risky). "
+    "Never invent numbers that are not in the letter."
+)
 
 SYSTEM_PROMPT = (
     "You extract structured data from Indian job offer letters. Reply with ONLY one JSON object, no prose, with keys: "
@@ -100,20 +114,25 @@ def parse_json(content):
     return None
 
 
-def sanitize(data):
-    out = {k: parse_amount(data.get(k)) for k in NUM_KEYS}
+def sanitize(data, country="in"):
+    keys = NUM_KEYS_US if country == "us" else NUM_KEYS
+    out = {k: parse_amount(data.get(k)) for k in keys}
     flags = data.get("flags") or []
     if not isinstance(flags, list):
         flags = [flags]
-    return {
+    res = {
         "fields": out,
         "company": str(data.get("company") or "")[:120],
         "role": str(data.get("role") or "")[:120],
         "flags": [str(f)[:220] for f in flags if str(f).strip()][:10],
     }
+    if country == "us":
+        st = str(data.get("state") or "").strip().upper()
+        res["state"] = st if re.fullmatch(r"[A-Z]{2}", st) else ""
+    return res
 
 
-async def _try_model(hc, db, model, messages, headers, deadline):
+async def _try_model(hc, db, model, messages, headers, deadline, country="in"):
     """One model, at most one retry (only to drop response_format on HTTP 400).
     Returns (data, status) where status is 'ok' | 'rate_limited' | 'failed' | 'cap'."""
     use_rf = True
@@ -154,12 +173,12 @@ async def _try_model(hc, db, model, messages, headers, deadline):
         except (KeyError, IndexError, TypeError):
             data = None
         if isinstance(data, dict):
-            return {**sanitize(data), "model": model}, "ok"
+            return {**sanitize(data, country), "model": model}, "ok"
         return None, "failed"
     return None, "failed"
 
 
-async def _call(db, models, messages, referer):
+async def _call(db, models, messages, referer, country="in"):
     key = os.environ.get("OPENROUTER_API_KEY", "").strip()
     if not key:
         return None, NOT_CONFIGURED_MSG
@@ -170,7 +189,7 @@ async def _call(db, models, messages, referer):
     deadline = time.monotonic() + CHAIN_DEADLINE_SECONDS
     async with httpx.AsyncClient() as hc:
         for model in models:  # any failure (429, 5xx, 4xx, timeout, bad JSON) -> next model
-            data, status = await _try_model(hc, db, model, messages, headers, deadline)
+            data, status = await _try_model(hc, db, model, messages, headers, deadline, country)
             if status == "ok":
                 return data, None
             if status == "cap":
@@ -181,7 +200,7 @@ async def _call(db, models, messages, referer):
     return None, UNAVAILABLE_MSG
 
 
-async def extract(db, ip, cache_key, messages, models, referer):
+async def extract(db, ip, cache_key, messages, models, referer, country="in"):
     cached = await db.ai_cache.find_one({"_id": cache_key})
     if cached:
         return {"ok": True, "cached": True, **cached["data"]}
@@ -191,7 +210,7 @@ async def extract(db, ip, cache_key, messages, models, referer):
         return {"ok": False, "message": LIMIT_MSG}
     if not await bump(db, f"ip:{today()}:{ip}", AI_PER_IP_PER_DAY):
         return {"ok": False, "message": LIMIT_MSG}
-    data, err = await _call(db, models, messages, referer)
+    data, err = await _call(db, models, messages, referer, country)
     if err:
         return {"ok": False, "message": err}
     await db.ai_cache.replace_one(
@@ -200,11 +219,15 @@ async def extract(db, ip, cache_key, messages, models, referer):
     return {"ok": True, "cached": False, **data}
 
 
-def text_messages(text):
-    return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": f"Offer letter text:\n\n{text}"}]
+def _prompt(country):
+    return US_SYSTEM_PROMPT if country == "us" else SYSTEM_PROMPT
 
 
-def image_messages(data_urls):
-    parts = [{"type": "text", "text": SYSTEM_PROMPT + "\n\nThe offer letter is in the attached image(s)."}]
+def text_messages(text, country="in"):
+    return [{"role": "system", "content": _prompt(country)}, {"role": "user", "content": f"Offer letter text:\n\n{text}"}]
+
+
+def image_messages(data_urls, country="in"):
+    parts = [{"type": "text", "text": _prompt(country) + "\n\nThe offer letter is in the attached image(s)."}]
     parts += [{"type": "image_url", "image_url": {"url": u}} for u in data_urls]
     return [{"role": "user", "content": parts}]

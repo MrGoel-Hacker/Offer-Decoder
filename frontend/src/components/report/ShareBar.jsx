@@ -13,7 +13,7 @@ export const ShareBar = ({ session, input }) => {
     try {
       const { data } = await http.post("/reports", {
         input: toPayload(input), clauseFlags: session.clauseFlags || [], notes: session.notes || "",
-        company: session.company || "", role: session.role || "", source: session.source || "manual",
+        company: session.company || "", role: session.role || "", source: session.source || "manual", country: session.country || "in",
       });
       setUrl(`${window.location.origin}/r/${data.id}`);
       toast.success("Report saved - anyone with the link can view it.");
@@ -36,8 +36,8 @@ export const ShareBar = ({ session, input }) => {
 
   return (
     <section className="card fade-up border-emerald-500/25" data-testid="share-bar">
-      <h2 className="font-display text-xl font-bold text-slate-100">Share this report</h2>
-      <p className="mt-1 text-sm text-slate-500">Saves a snapshot with a private, hard-to-guess link. No login needed to open it. Links expire after 90 days.</p>
+      <h2 className="font-display text-xl font-bold text-[var(--text)]">Share this report</h2>
+      <p className="mt-1 text-sm text-[var(--text)]0">Saves a snapshot with a private, hard-to-guess link. No login needed to open it. Links expire after 90 days.</p>
       {url ? (
         <div className="mt-4 flex gap-2">
           <input readOnly value={url} className="field font-num text-xs" onFocus={(e) => e.target.select()} data-testid="share-url-input" />

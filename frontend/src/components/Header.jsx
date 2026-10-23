@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
+import { setTheme, useTheme } from "@/lib/theme";
 
 export const LogoMark = ({ size = 28 }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
@@ -8,18 +10,34 @@ export const LogoMark = ({ size = 28 }) => (
   </svg>
 );
 
-export const Header = () => (
-  <header className="sticky top-0 z-40 border-b border-[#1c2536] bg-[#090d16]/80 backdrop-blur-xl grain">
-    <div className="max-w-3xl mx-auto flex items-center justify-between px-5 py-3.5">
-      <Link to="/" className="flex items-center gap-2.5" data-testid="brand-home-link">
-        <LogoMark />
-        <span className="font-display text-lg font-extrabold tracking-tight text-slate-50">
-          Offer<span className="text-emerald-400">Decode</span>
-        </span>
-      </Link>
-      <span className="rounded-full border border-slate-700 px-3 py-1 text-[11px] font-semibold text-slate-400" data-testid="regime-badge">
-        India · FY 2026-27
-      </span>
-    </div>
-  </header>
-);
+export const Header = () => {
+  const theme = useTheme();
+  const toggle = () => setTheme(theme === "light" ? "dark" : "light");
+  return (
+    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] backdrop-blur-xl grain">
+      <div className="max-w-3xl mx-auto flex items-center justify-between px-5 py-3.5">
+        <Link to="/" className="flex items-center gap-2.5" data-testid="brand-home-link">
+          <LogoMark />
+          <span className="font-display text-lg font-extrabold tracking-tight text-[var(--text)]">
+            Offer<span className="text-[var(--accent-text)]">Decode</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-2.5">
+          <span className="rounded-full border border-[var(--line-2)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dim)]" data-testid="regime-badge">
+            India + US · 2026
+          </span>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--line-2)] text-[var(--text-dim)] hover:border-emerald-500/60 hover:text-[var(--accent-text)]"
+            style={{ transition: "border-color .2s, color .2s" }}
+            data-testid="theme-toggle"
+          >
+            {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+};

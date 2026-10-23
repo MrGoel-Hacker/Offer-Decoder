@@ -1,4 +1,4 @@
-// Display-only formatting (Indian grouping). All figures come from the backend math.
+// Display-only formatting. All figures come from the backend math.
 export function inr(n) {
   if (n === null || n === undefined || !isFinite(n)) return "-";
   const neg = n < 0;
@@ -14,7 +14,19 @@ export function inr(n) {
   return (neg ? "-" : "") + "\u20B9" + out;
 }
 
-export const group = (v) => (v === "" || v === null || v === undefined ? "" : inr(v).replace("\u20B9", ""));
+export function usd(n) {
+  if (n === null || n === undefined || !isFinite(n)) return "-";
+  const neg = n < 0;
+  const s = Math.abs(Math.round(n)).toLocaleString("en-US");
+  return (neg ? "-" : "") + "$" + s;
+}
+
+export const money = (country) => (country === "us" ? usd : inr);
+
+export const group = (v, country) => {
+  if (v === "" || v === null || v === undefined) return "";
+  return money(country)(v).replace(/[₹$]/, "");
+};
 
 export const toNum = (s) => {
   const d = String(s ?? "").replace(/[^\d]/g, "");
@@ -25,4 +37,9 @@ export const lakhs = (n) => {
   if (!n) return "";
   if (n >= 1e7) return `${(n / 1e7).toFixed(2).replace(/\.?0+$/, "")} Cr`;
   return `${(n / 1e5).toFixed(2).replace(/\.?0+$/, "")} L`;
+};
+
+export const kfmt = (n) => {
+  if (!n) return "";
+  return n >= 1000 ? `$${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k` : `$${n}`;
 };

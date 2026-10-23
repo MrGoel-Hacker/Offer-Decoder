@@ -16,11 +16,11 @@ export default function SharedReport() {
     <main className="max-w-3xl mx-auto px-5" data-testid="shared-report-page">
       {error && (
         <div className="card mt-10 text-center" data-testid="shared-report-error">
-          <p className="font-display text-xl font-bold text-slate-100">{error}</p>
+          <p className="font-display text-xl font-bold text-[var(--text)]">{error}</p>
           <Link to="/" className="btn-accent mt-6">Decode an offer</Link>
         </div>
       )}
-      {!doc && !error && <p className="mt-16 text-center text-sm text-slate-500" data-testid="shared-report-loading">Loading report…</p>}
+      {!doc && !error && <p className="mt-16 text-center text-sm text-[var(--text)]0" data-testid="shared-report-loading">Loading report…</p>}
       {doc && <ReportView session={doc} stored={doc.result} readOnly expiresAt={doc.expiresAt} />}
     </main>
   );

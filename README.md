@@ -1,14 +1,16 @@
 # Offer Decode
 
-Decode Indian job offer letters into what they actually pay. Paste the letter text, upload a PDF, or upload photos of the offer, and Offer Decode pulls out the CTC breakup and shows your real monthly in-hand salary, red-flag clauses and negotiation pointers. You can also save a shareable report link.
+Decode Indian and US job offer letters into what they actually pay. Paste the letter text, upload a PDF (scanned PDFs work - pages are read visually), or upload photos of the offer, and Offer Decode pulls out the numbers and shows your real monthly take-home, red-flag clauses and negotiation pointers. You can also save a shareable report link.
 
 Live at **https://offerdecoder.online**
 
 What you get:
 
-- **CTC breakdown** - basic, HRA, PF, gratuity, variable pay, joining bonus, ESOPs, other non-cash items
-- **Real in-hand salary** - monthly take-home computed with India FY 2026-27 new-regime tax math (plain code, not AI)
+- **India: CTC breakdown** - basic, HRA, PF, gratuity, variable pay, joining bonus, ESOPs, other non-cash items, with monthly in-hand from FY 2026-27 new-regime tax math (plain code, not AI)
+- **USA: comp breakdown** - base, target bonus, RSUs, signing bonus, 401(k), with monthly take-home from 2026 federal brackets, FICA and state tax (single filer, standard deduction; city/local taxes not included)
+- **Scanned PDF support** - pages are rendered in memory (pypdfium2) and read by the vision models
 - **Red flags** - bonds, clawbacks, long notice periods, non-competes, probation and vesting gotchas, with what to ask about each
+- **Dark and light themes** - toggle in the header, remembered per browser
 - **Shareable report** - a link you can send someone, valid for 90 days
 
 Stack: FastAPI + MongoDB (Motor) backend, React 19 (Create React App + craco, Tailwind, shadcn/ui) frontend. AI letter reading uses free OpenRouter models; everything else is plain code so the app keeps working when the AI limit is hit.

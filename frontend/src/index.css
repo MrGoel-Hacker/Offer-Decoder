@@ -5,19 +5,50 @@
 :root {
   --bg: #090d16;
   --surface: #0f1522;
+  --field-bg: #0b111c;
   --line: #1c2536;
-  --accent: #10b981;
+  --line-2: #243048;
+  --line-3: #475569;
+  --text: #f1f5f9;
+  --text-2: #cbd5e1;
+  --text-dim: #94a3b8;
+  --text-faint: #64748b;
+  --text-xfaint: #475569;
+  --accent-text: #34d399;
+  --warn-text: #fde68a;
+  --warn-strong: #fbbf24;
+  --chip: rgba(51, 65, 85, 0.4);
+}
+
+html.light {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --field-bg: #eef2f7;
+  --line: #e2e8f0;
+  --line-2: #cbd5e1;
+  --line-3: #94a3b8;
+  --text: #0f172a;
+  --text-2: #334155;
+  --text-dim: #475569;
+  --text-faint: #64748b;
+  --text-xfaint: #94a3b8;
+  --accent-text: #059669;
+  --warn-text: #92400e;
+  --warn-strong: #b45309;
+  --chip: rgba(203, 213, 225, 0.55);
 }
 
 body {
   margin: 0;
   background: var(--bg);
-  color: #e5e7eb;
+  color: var(--text);
   font-family: "Manrope", ui-sans-serif, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color .25s, color .25s;
 }
 
 ::selection { background: rgba(16, 185, 129, 0.35); color: #fff; }
+html.light ::selection { color: #04130d; }
 
 .font-display { font-family: "Bricolage Grotesque", "Manrope", sans-serif; }
 .font-num { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
@@ -45,6 +76,22 @@ body {
     --ring: 160 84% 39%;
     --radius: 0.9rem;
   }
+  html.light {
+    --background: 220 33% 97%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 214 32% 91%;
+    --accent-foreground: 222 47% 11%;
+    --border: 214 32% 89%;
+    --input: 214 32% 85%;
+  }
 }
 
 @layer base {
@@ -54,21 +101,31 @@ body {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-[#1c2536] bg-[#0f1522]/90 p-5 sm:p-7;
+    @apply rounded-2xl border p-5 sm:p-7;
+    border-color: var(--line);
+    background: var(--surface);
   }
   .btn-accent {
     @apply inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3 text-sm font-bold text-[#04130d] hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
     transition: background-color .2s, transform .15s;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 hover:border-emerald-500/60 hover:text-emerald-300 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold disabled:opacity-50 disabled:pointer-events-none;
+    border-color: var(--line-2);
+    color: var(--text-2);
     transition: border-color .2s, color .2s;
   }
-  .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500; }
+  .btn-ghost:hover { border-color: rgba(16, 185, 129, 0.6); color: var(--accent-text); }
+  .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.18em]; color: var(--text-faint); }
   .field {
-    @apply w-full rounded-xl border border-[#243048] bg-[#0b111c] px-3.5 py-3 text-slate-100 placeholder:text-slate-600 outline-none focus:border-emerald-500/70 focus:ring-2 focus:ring-emerald-500/20;
+    @apply w-full rounded-xl border px-3.5 py-3 outline-none focus:ring-2 focus:ring-emerald-500/20;
+    border-color: var(--line-2);
+    background: var(--field-bg);
+    color: var(--text);
     transition: border-color .2s, box-shadow .2s;
   }
+  .field::placeholder { color: var(--text-xfaint); }
+  .field:focus { border-color: rgba(16, 185, 129, 0.7); }
 }
 
 .hatch {
