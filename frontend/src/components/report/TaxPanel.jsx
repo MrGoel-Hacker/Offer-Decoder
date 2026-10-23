@@ -35,8 +35,13 @@ export const TaxPanel = ({ r }) => {
             Extra tax if the full bonus is paid: <span className="font-num text-[var(--text-2)]">{fmt(r.taxOnVariable)}</span>
           </p>
         )}
+        {r.stateNote && (
+          <p className="mt-4 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-[var(--text-dim)]" data-testid="tax-state-note">
+            {r.stateNote}
+          </p>
+        )}
         <p className="mt-3 rounded-lg border border-[var(--line)] bg-[var(--field-bg)] px-3 py-2 text-[11px] leading-relaxed text-[var(--text-dim)]" data-testid="tax-scope-note">
-          {r.meta.countryNote} State figures use Tax Foundation's 2026 tables - a good estimate, not verified against each state's own revenue department. Numbers: {r.meta.slabsVerifiedAgainst}.
+          {r.meta.countryNote} Numbers: {r.meta.slabsVerifiedAgainst}.
         </p>
       </section>
     );

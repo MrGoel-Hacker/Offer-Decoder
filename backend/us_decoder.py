@@ -128,6 +128,7 @@ def decode_us(inp):
         "k401Limit": K401_LIMIT,
         "state": state_code,
         "stateName": t_all["stateName"],
+        "stateNote": STATES[state_code].get("note", "") if state_code else "",
         "taxBase": {
             "k401": js_round(k_base),
             "federal": js_round(t_base["federal"]),
