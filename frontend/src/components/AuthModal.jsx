@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleButton, useAuth } from "@/lib/auth";
@@ -17,8 +18,11 @@ export const AuthModal = ({ open, onClose, onDone, title = "Sign in to continue"
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={onClose} data-testid="auth-modal">
+  // Portal to <body>: the header (backdrop-blur) and animated cards create containing
+  // blocks that would trap a `fixed` overlay and clip the modal off-screen.
+  return createPortal(
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60" onClick={onClose} data-testid="auth-modal">
+      <div className="flex min-h-full items-center justify-center p-4">
       <div className="card w-full max-w-sm !p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <div>
@@ -38,6 +42,8 @@ export const AuthModal = ({ open, onClose, onDone, title = "Sign in to continue"
           We store your name, email and Google ID so your saved reports belong to you. See our <a href="/privacy" className="underline">privacy page</a>.
         </p>
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 };
