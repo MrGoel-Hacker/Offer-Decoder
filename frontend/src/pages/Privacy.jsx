@@ -15,8 +15,8 @@ export default function Privacy() {
         What happens to your offer letter
       </h1>
       <p className="fade-up mt-4 max-w-xl text-sm text-[var(--text-dim)]" style={{ animationDelay: "60ms" }}>
-        OfferDecode has no accounts and no sign-up. This page explains, in plain terms, what is processed when you use it.
-        Last updated: October 2026.
+        Decoding an offer needs no account. Sign-in with Google is only needed when you save a report. This page explains, in plain terms,
+        what is processed when you use it. Last updated: October 2026.
       </p>
 
       <div className="mt-8 space-y-4">
@@ -62,12 +62,26 @@ export default function Privacy() {
           </p>
         </Section>
 
-        <Section title="Shared reports expire after 90 days">
+        <Section title="Sign-in and your account">
           <p>
-            Nothing is saved unless you explicitly save a report to share it. A saved report stores the numbers you entered, any
-            clause flags and notes, and the company and role, in a MongoDB Atlas database, behind a random unguessable link.
-            Anyone you give that link to can view it. Every report expires and is automatically deleted 90 days after it was
-            created.
+            Decoding, Quick scan and manual entry work without any sign-in. If you want to save a report, you sign in with Google
+            (Google's own sign-in window - we never see your Google password). We then store your name, email address and Google
+            account ID so your saved reports belong to you, plus a sign-in session that expires after 30 days. That is the whole
+            account. Your offer letters are not attached to your identity beyond the reports you explicitly save.
+          </p>
+        </Section>
+
+        <Section title="Saved reports are private; share links are your choice">
+          <p>
+            Nothing is saved unless you explicitly save a report, which requires sign-in. A saved report stores the numbers you
+            entered, any clause flags and notes, and the company and role, in a MongoDB Atlas database, linked to your account.
+            Only you can see it, under My reports, and you can delete it yourself at any time.
+          </p>
+          <p>
+            If you want to show a report to someone, you create a share link for it - a separate, explicit action. Anyone you give
+            that link to can then view the report without signing in. Every report expires and is automatically deleted 90 days
+            after it was created, shared or not. Reports saved before accounts existed (October 2026) remain viewable by their
+            original links until they expire.
           </p>
         </Section>
 

@@ -1,10 +1,13 @@
-"""Offer Decode API regression tests: decode math, quickscan, AI extract (no key), shareable reports + rate limit."""
+"""Offer Decode API regression tests: decode math, quickscan, AI extract (no key), shareable reports + rate limit + auth."""
 import io
 import os
+import secrets
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 import requests
+from dotenv import dotenv_values
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 API = f"{BASE_URL}/api"
@@ -18,6 +21,30 @@ Variable pay: Rs 1,80,000 subject to performance rating
 Joining bonus: Rs 1,00,000 (to be repaid if you leave within 12 months)
 You will be under a 2-year service bond. Notice period 90 days.
 """
+
+
+_ENV = dotenv_values(os.path.join(os.path.dirname(__file__), "..", ".env"))
+
+
+def _mongo_conf():
+    url = os.environ.get("MONGO_URL") or _ENV.get("MONGO_URL")
+    name = os.environ.get("DB_NAME") or _ENV.get("DB_NAME")
+    return url, name
+
+
+def make_session():
+    """Insert a test user + session straight into Mongo; returns (auth_header_dict, mongo_db, sub)."""
+    url, name = _mongo_conf()
+    if not url or not name:
+        pytest.skip("Mongo not configured (set MONGO_URL/DB_NAME or backend/.env)")
+    import pymongo
+    db = pymongo.MongoClient(url, serverSelectionTimeoutMS=5000)[name]
+    sub = "TEST_sub_" + uuid.uuid4().hex[:12]
+    token = "TEST_tok_" + secrets.token_urlsafe(24)
+    db.users.insert_one({"_id": sub, "email": "test@example.com", "name": "TEST User", "createdAt": datetime.now(timezone.utc)})
+    db.sessions.insert_one({"_id": token, "userId": sub, "createdAt": datetime.now(timezone.utc),
+                            "expiresAt": datetime.now(timezone.utc) + timedelta(days=1)})
+    return {"authorization": f"Bearer {token}"}, db, sub
 
 
 def ip():
@@ -168,28 +195,76 @@ def test_extract_images_too_many():
     assert r.status_code == 400
 
 
-# --- reports
-def test_report_create_get_and_404():
-    h = {"x-forwarded-for": ip()}
+# --- reports (saving requires sign-in; new saves are owner-only until explicitly shared;
+#     reports saved before accounts existed stay public-by-link until they expire)
+def test_report_requires_auth():
+    r = requests.post(f"{API}/reports", json={"input": {"ctc": 1800000}, "company": "TEST_NoAuth"}, headers={"x-forwarded-for": ip()})
+    assert r.status_code == 401
+
+
+def test_report_private_by_default_then_share():
+    ah, db, sub = make_session()
+    h = {"x-forwarded-for": ip(), **ah}
     r = requests.post(f"{API}/reports", json={"input": {"ctc": 1800000}, "notes": "bond", "company": "TEST_Acme", "role": "SDE"}, headers=h)
     assert r.status_code == 200, r.text
     rid = r.json()["id"]
     assert len(rid) >= 30 and r.json()["expiresAt"]
-    g = requests.get(f"{API}/reports/{rid}")
+    # owner stamped in Mongo, never leaked by the API
+    assert db.reports.find_one({"_id": rid})["ownerUserId"] == sub
+    # anonymous and non-owner cannot view a private save (404, not 401/403 - no existence leak)
+    assert requests.get(f"{API}/reports/{rid}").status_code == 404
+    ah2, db2, sub2 = make_session()
+    assert requests.get(f"{API}/reports/{rid}", headers=ah2).status_code == 404
+    # owner can view it
+    g = requests.get(f"{API}/reports/{rid}", headers=ah)
     assert g.status_code == 200
     d = g.json()
     assert d["company"] == "TEST_Acme" and d["result"]["monthlyFixed"] == 122045
-    assert "_id" not in d and d["id"] == rid
+    assert "_id" not in d and d["id"] == rid and "ownerUserId" not in d and "shared" not in d
+    # explicit share opens link access; only the owner can share
+    assert requests.post(f"{API}/reports/{rid}/share", headers=ah2).status_code == 404
+    s = requests.post(f"{API}/reports/{rid}/share", headers=ah)
+    assert s.status_code == 200
+    pub = requests.get(f"{API}/reports/{rid}")
+    assert pub.status_code == 200 and pub.json()["company"] == "TEST_Acme"
+    # owner sees shared state in My reports, then deletes it
+    mine = requests.get(f"{API}/my/reports", headers=ah)
+    row = [x for x in mine.json()["reports"] if x["id"] == rid]
+    assert row and row[0]["shared"] is True
+    dl = requests.delete(f"{API}/my/reports/{rid}", headers=ah)
+    assert dl.status_code == 200
+    assert requests.get(f"{API}/reports/{rid}", headers=ah).status_code == 404
+
+
+def test_legacy_report_stays_public_by_link():
+    ah, db, sub = make_session()
+    rid = "TEST_legacy_" + secrets.token_urlsafe(18)
+    now = datetime.now(timezone.utc)
+    db.reports.insert_one({"_id": rid, "input": {"ctc": 1800000}, "clauseFlags": [], "notes": "", "company": "TEST_Legacy",
+                           "role": "", "source": "manual", "country": "in", "result": {"monthlyFixed": 1},
+                           "createdAt": now, "expiresAt": now + timedelta(days=30)})
+    g = requests.get(f"{API}/reports/{rid}")
+    assert g.status_code == 200 and g.json()["company"] == "TEST_Legacy"
+    db.reports.delete_one({"_id": rid})
     assert requests.get(f"{API}/reports/doesnotexist123").status_code == 404
 
 
+def test_my_reports_requires_auth_and_owner_scoping():
+    assert requests.get(f"{API}/my/reports").status_code == 401
+    ah, db, sub = make_session()
+    other = requests.delete(f"{API}/my/reports/doesnotexist123", headers=ah)
+    assert other.status_code == 404
+
+
 def test_report_missing_ctc():
-    r = requests.post(f"{API}/reports", json={"input": {}}, headers={"x-forwarded-for": ip()})
+    ah, db, sub = make_session()
+    r = requests.post(f"{API}/reports", json={"input": {}}, headers={"x-forwarded-for": ip(), **ah})
     assert r.status_code == 400
 
 
 def test_report_rate_limit():
-    h = {"x-forwarded-for": ip()}
+    ah, db, sub = make_session()
+    h = {"x-forwarded-for": ip(), **ah}
     codes = [requests.post(f"{API}/reports", json={"input": {"ctc": 1000000}, "company": "TEST_rl"}, headers=h).status_code for _ in range(11)]
     assert codes[:10] == [200] * 10, codes
     assert codes[10] == 429

@@ -6,7 +6,7 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -18,6 +18,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 import ai_extract  # noqa: E402
+import auth  # noqa: E402
 import pdf_scan  # noqa: E402
 from decoder import decode  # noqa: E402
 from us_decoder import INPUT_KEYS_US, decode_us  # noqa: E402
@@ -57,6 +58,8 @@ class BaseDocument(BaseModel):
 
 
 class ReportDoc(BaseDocument):
+    ownerUserId: Optional[str] = None
+    shared: bool = False
     input: Dict[str, Any]
     clauseFlags: List[str] = []
     notes: str = ""
@@ -248,6 +251,7 @@ async def extract_images(request: Request, files: List[UploadFile] = File(...), 
 
 @api.post("/reports")
 async def create_report(req: ReportCreate, request: Request):
+    user = await auth.require_user(db, request)
     country = norm_country(req.country)
     if country == "us":
         if not req.input.get("baseSalary"):
@@ -260,24 +264,107 @@ async def create_report(req: ReportCreate, request: Request):
     doc = ReportDoc(
         _id=secrets.token_urlsafe(24), input=clean_input(req.input, country), clauseFlags=req.clauseFlags[:12],
         notes=req.notes[:5000], company=req.company[:120], role=req.role[:120], source=req.source[:20], country=country,
-        result=run_decode(req), createdAt=now, expiresAt=now + timedelta(days=REPORT_TTL_DAYS),
+        result=run_decode(req), ownerUserId=user["_id"], createdAt=now, expiresAt=now + timedelta(days=REPORT_TTL_DAYS),
     )
     await db.reports.insert_one(doc.to_mongo())
     return {"id": doc.id, "expiresAt": doc.expiresAt.isoformat()}
 
 
 @api.get("/reports/{rid}")
-async def get_report(rid: str):
+async def get_report(rid: str, request: Request):
     raw = await db.reports.find_one({"_id": rid})
     if not raw:
         raise HTTPException(404, "Report not found or expired.")
     doc = ReportDoc.from_mongo(raw)
     if doc.expiresAt.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         raise HTTPException(404, "Report not found or expired.")
+    # Audience: reports saved before accounts existed are public-by-link (legacy);
+    # account-owned reports are owner-only until the owner explicitly shares them.
+    if raw.get("ownerUserId") and not raw.get("shared"):
+        user = await auth.get_session_user(db, request)
+        if not user or user["_id"] != raw["ownerUserId"]:
+            raise HTTPException(404, "Report not found or expired.")
     out = doc.model_dump()
+    out.pop("ownerUserId", None)
+    out.pop("shared", None)
     out["createdAt"] = doc.createdAt.isoformat()
     out["expiresAt"] = doc.expiresAt.isoformat()
     return out
+
+
+
+class GoogleAuthIn(BaseModel):
+    credential: str = Field(min_length=20, max_length=8192)
+
+
+def _public_user(user: dict) -> dict:
+    return {"name": user.get("name", ""), "email": user.get("email", ""), "picture": user.get("picture", "")}
+
+
+@api.post("/auth/google")
+async def google_sign_in(body: GoogleAuthIn):
+    profile = auth.verify_credential(body.credential)
+    now = datetime.now(timezone.utc)
+    await db.users.update_one(
+        {"_id": profile["sub"]},
+        {"$set": {"email": profile["email"], "name": profile["name"], "picture": profile["picture"], "lastLoginAt": now},
+         "$setOnInsert": {"createdAt": now}},
+        upsert=True,
+    )
+    token = await auth.issue_session(db, profile["sub"])
+    return {"token": token, "user": {"name": profile["name"], "email": profile["email"], "picture": profile["picture"]}}
+
+
+@api.get("/auth/me")
+async def auth_me(request: Request):
+    user = await auth.require_user(db, request)
+    return _public_user(user)
+
+
+@api.post("/auth/logout")
+async def auth_logout(request: Request):
+    header = request.headers.get("authorization", "")
+    if header.startswith("Bearer "):
+        await db.sessions.delete_one({"_id": header[7:].strip()})
+    return {"ok": True}
+
+
+@api.post("/reports/{rid}/share")
+async def share_report(rid: str, request: Request):
+    user = await auth.require_user(db, request)
+    res = await db.reports.update_one(
+        {"_id": rid, "ownerUserId": user["_id"]}, {"$set": {"shared": True}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Report not found.")
+    return {"id": rid, "shared": True}
+
+
+@api.get("/my/reports")
+async def my_reports(request: Request):
+    user = await auth.require_user(db, request)
+    cursor = db.reports.find(
+        {"ownerUserId": user["_id"]},
+        {"input": 0, "result": 0, "clauseFlags": 0, "notes": 0},
+    ).sort("createdAt", -1).limit(100)
+    items = []
+    async for raw in cursor:
+        items.append({
+            "id": raw["_id"], "company": raw.get("company", ""), "role": raw.get("role", ""),
+            "country": raw.get("country", "in"), "source": raw.get("source", "manual"),
+            "createdAt": raw["createdAt"].isoformat(), "expiresAt": raw["expiresAt"].isoformat(),
+            "shared": bool(raw.get("shared")),
+        })
+    return {"reports": items}
+
+
+@api.delete("/my/reports/{rid}")
+async def delete_my_report(rid: str, request: Request):
+    user = await auth.require_user(db, request)
+    res = await db.reports.delete_one({"_id": rid, "ownerUserId": user["_id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Report not found.")
+    return {"ok": True}
 
 
 app.include_router(api)
@@ -291,6 +378,8 @@ app.add_middleware(
 async def indexes():
     await db.ai_cache.create_index("createdAt", expireAfterSeconds=ai_extract.CACHE_TTL_SECONDS)
     await db.reports.create_index("expiresAt", expireAfterSeconds=0)
+    await db.reports.create_index("ownerUserId")
+    await db.sessions.create_index("expiresAt", expireAfterSeconds=0)
     await db.usage.create_index("expiresAt", expireAfterSeconds=0)
 
 

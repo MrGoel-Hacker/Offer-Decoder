@@ -59,6 +59,7 @@ The backend serves `frontend/build` itself; open `http://localhost:8001`.
 | `CORS_ORIGINS` | Comma-separated origins allowed to call the API cross-origin. Production uses `https://offerdecoder.online` with credentials off. Same-origin calls (frontend served by the backend) do not use CORS at all |
 | `OPENROUTER_API_KEY` | OpenRouter key for AI offer-letter reading (free models only). Leave empty to run the app without AI |
 | `APP_PUBLIC_URL` | Public site URL, sent to OpenRouter as the HTTP-Referer header |
+| `GOOGLE_CLIENT_ID` | Google OAuth web client ID for sign-in (public value, embedded in the frontend too). Sign-in returns 503 until set |
 
 Never commit a real `.env`; it is gitignored.
 
