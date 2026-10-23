@@ -218,9 +218,9 @@ async def extract_pdf(request: Request, file: UploadFile = File(...), country: s
         res = await ai_extract.extract(db, client_ip(request), key, ai_extract.text_messages(text, country), ai_extract.TEXT_MODELS, referer(request), country)
         return {**res, "text": text}
     # Scanned PDF (no usable text layer): render pages and read them with the vision models.
-    urls = pdf_scan.render_pdf_pages(data)
+    urls, err_tag = pdf_scan.render_pdf_pages(data)
     if not urls:
-        raise HTTPException(400, "Couldn't read that PDF. Try uploading page photos instead.")
+        raise HTTPException(400, f"Couldn't read that PDF ({err_tag or 'unknown'}). Try uploading page photos instead.")
     key = f"p{country[0]}:" + ai_extract.text_hash(data)
     res = await ai_extract.extract(db, client_ip(request), key, ai_extract.image_messages(urls, country), ai_extract.IMAGE_MODELS, referer(request), country)
     return {**res, "scanned": True, "text": ""}

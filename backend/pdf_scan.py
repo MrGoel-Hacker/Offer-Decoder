@@ -11,12 +11,12 @@ JPEG_QUALITY = 82
 
 
 def render_pdf_pages(data: bytes):
-    """Return a list of JPEG data-URLs, one per page (up to MAX_PAGES). Empty on failure."""
+    """Return (list of JPEG data-URLs, error tag). Up to MAX_PAGES pages."""
     try:
         import pypdfium2 as pdfium
     except ImportError:
         logger.error("pypdfium2 not installed - cannot render scanned PDFs")
-        return []
+        return [], "renderer-unavailable"
     try:
         pdf = pdfium.PdfDocument(data)
         n = min(len(pdf), MAX_PAGES)
@@ -32,7 +32,7 @@ def render_pdf_pages(data: bytes):
             out.append("data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode())
             page.close()
         pdf.close()
-        return out
+        return out, ""
     except Exception as e:
         logger.warning("pdf render failed: %s", type(e).__name__)
-        return []
+        return [], "render-" + type(e).__name__
