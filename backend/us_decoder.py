@@ -156,6 +156,6 @@ def decode_us(inp):
         "meta": {
             "regime": "US federal + state, tax year 2026 (single filer, standard deduction)",
             "slabsVerifiedAgainst": "IRS Rev. Proc. 2025-32; SSA 2026 COLA; Tax Foundation 2026 state tables, with CA/NY/NJ/MA/IL checked at state tax agencies (Oct 2026)",
-            "countryNote": "Estimate: single filer, standard deduction, no local/city taxes, state credit-type exemptions and phaseouts not modelled. State rules checked at state tax agencies: CA (2025 rules - latest published), NY (revised 2026 schedule incl. benefit recapture), NJ, MA (2026), IL (2026), TX, WA. Other states use published 2026 tax tables and are not individually source-verified.",
+            "countryNote": "Estimate: single filer, standard deduction, no local/city taxes, state credit-type exemptions and phaseouts not modelled. State rules checked at state tax agencies: CA (2025 rules - latest published), NY (official 2026 withholding schedule incl. benefit recapture), NJ, MA (2026), IL (2026), TX, WA. Other states use published 2026 tax tables and are not individually source-verified.",
         },
     }
