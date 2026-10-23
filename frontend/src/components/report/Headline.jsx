@@ -34,10 +34,18 @@ export const Headline = ({ r }) => {
           <Stat label="Total annual comp (base + bonus + equity)" value={fmt(r.ctc)} dim testId="ctc-value" />
           {r.derived.signing > 0 && <Stat label="Signing bonus after tax (rough, one-time)" value={fmt(r.joiningAfterTax)} testId="joining-after-tax-value" />}
         </div>
-        <p className="mt-6 border-t border-[var(--line)] pt-4 text-sm leading-relaxed text-[var(--text-dim)]" data-testid="how-we-got-this">
-          <span className="font-semibold text-[var(--text-2)]">How we got this: </span>
-          gross {fmt(r.cashGross)} − 401(k) {fmt(r.derived.k401)} − federal {fmt(t.federal)} − {r.stateName ? `${r.stateName} ` : ""}state {fmt(t.stateTax)} − Social Security {fmt(t.ss)} − Medicare {fmt(t.medicare)} = {fmt(r.cashGross - r.derived.k401 - t.totalTax)} per year ÷ 12. The 401(k) is still your money, saved pre-tax.
-        </p>
+        <div className="mt-6 border-t border-[var(--line)] pt-4 text-sm leading-relaxed text-[var(--text-dim)]">
+          <p data-testid="how-we-got-this">
+            <span className="font-semibold text-[var(--text-2)]">Headline math (base salary only): </span>
+            base {fmt(r.derived.base)} − 401(k) {fmt(r.taxBase?.k401 ?? 0)} − federal {fmt(r.taxBase?.federal ?? 0)} − {r.stateName ? `${r.stateName} ` : ""}state {fmt(r.taxBase?.stateTax ?? 0)} − Social Security {fmt(r.taxBase?.ss ?? 0)} − Medicare {fmt(r.taxBase?.medicare ?? 0)} = {fmt(r.annualTakeHomeFixed)} per year ÷ 12.
+          </p>
+          {hasExtra && (
+            <p className="mt-2" data-testid="how-we-got-this-variable">
+              <span className="font-semibold text-[var(--text-2)]">If bonus + equity pay in full: </span>
+              gross {fmt(r.cashGross)} − 401(k) {fmt(r.derived.k401)} − federal {fmt(t.federal)} − {r.stateName ? `${r.stateName} ` : ""}state {fmt(t.stateTax)} − Social Security {fmt(t.ss)} − Medicare {fmt(t.medicare)} = {fmt(r.cashGross - r.derived.k401 - t.totalTax)} per year ÷ 12 ≈ {fmt(r.monthlyWithVariable)}/mo (yearly average, not monthly salary). The 401(k) is still your money, saved pre-tax.
+            </p>
+          )}
+        </div>
       </section>
     );
   }

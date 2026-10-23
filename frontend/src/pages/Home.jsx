@@ -42,7 +42,7 @@ const Hero = ({ limits, country }) => (
     </p>
     {limits && (
       <p className="mt-4 text-xs text-[var(--text-faint)]" data-testid="ai-limits-info">
-        {limits.aiConfigured && limits.globalAvailable ? `AI reads left for you today: ${limits.ipRemaining} of 5. Quick scan and manual entry are unlimited.` : "AI reading is paused right now - Quick scan and manual entry work as usual."}
+        {limits.aiConfigured && limits.globalAvailable ? `AI reads left for you today: ${limits.ipRemaining} of 5. ${country === "us" ? "Manual entry is" : "Quick scan and manual entry are"} unlimited.` : `AI reading is paused right now - ${country === "us" ? "Manual entry works" : "Quick scan and manual entry work"} as usual.`}
       </p>
     )}
   </section>

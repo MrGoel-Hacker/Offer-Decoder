@@ -126,6 +126,14 @@ def decode_us(inp):
         "k401Limit": K401_LIMIT,
         "state": state_code,
         "stateName": t_all["stateName"],
+        "taxBase": {
+            "k401": js_round(k_base),
+            "federal": js_round(t_base["federal"]),
+            "stateTax": js_round(t_base["stateTax"]),
+            "ss": js_round(t_base["ss"]),
+            "medicare": js_round(t_base["medicare"]),
+            "totalTax": js_round(t_base["total"]),
+        },
         "taxFixed": {
             "taxable": js_round(t_all["fedTaxable"]),
             "stateTaxable": js_round(t_all["stateTaxable"]),
