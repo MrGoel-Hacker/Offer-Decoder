@@ -70,6 +70,8 @@ def decode_us(inp):
         assumptions.append("No work state selected - showing federal taxes and FICA only. Pick a state for the full picture.")
     elif STATES[state_code].get("none"):
         assumptions.append(f"{STATES[state_code]['name']} has no state income tax on wages.")
+    if state_code and STATES[state_code].get("note"):
+        assumptions.append(STATES[state_code]["note"])
 
     gross_all = base + bonus + rsus
     comp = gross_all  # headline "total annual comp" (excludes one-time signing bonus)
@@ -153,6 +155,6 @@ def decode_us(inp):
         "meta": {
             "regime": "US federal + state, tax year 2026 (single filer, standard deduction)",
             "slabsVerifiedAgainst": "IRS Rev. Proc. 2025-32; SSA 2026 COLA; Tax Foundation state tables (Feb 2026)",
-            "countryNote": "Estimate: single filer, standard deduction, no local/city taxes, state credit-type exemptions and phaseouts not modelled.",
+            "countryNote": "Estimate: single filer, standard deduction, no local/city taxes, state credit-type exemptions and phaseouts not modelled. State rules checked against state tax agencies for CA, NY, NJ, TX, WA, MA and IL; other states use published 2026 tax tables and are not individually source-verified.",
         },
     }

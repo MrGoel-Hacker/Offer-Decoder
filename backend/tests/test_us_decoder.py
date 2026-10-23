@@ -66,3 +66,22 @@ def test_ss_wage_base_cap():
     assert r["taxFixed"]["ss"] == round(0.062 * 184500)
     # additional medicare 0.9% over 200k
     assert r["taxFixed"]["medicare"] == round(0.0145 * 300000 + 0.009 * 100000)
+
+
+def test_ca_uses_latest_ftb_schedule():
+    r = decode_us({"baseSalary": 100000, "state": "CA"})
+    # FTB latest published (TY2025): std deduction 5706; brackets per 540-ES instructions
+    assert r["taxFixed"]["stateTax"] == 5208
+    assert any("SDI" in a for a in r["assumptions"])
+
+
+def test_nj_rate_schedule_precision():
+    r = decode_us({"baseSalary": 100000, "state": "NJ"})
+    # NJ Table A: 5.525% bracket (not 5.53%); $1,000 personal exemption
+    assert r["taxFixed"]["stateTax"] == 4180
+
+
+def test_ma_surtax_threshold_2026():
+    r = decode_us({"baseSalary": 1200000, "state": "MA"})
+    # mass.gov: TY2026 surtax threshold $1,107,750
+    assert r["taxFixed"]["stateTax"] == 63294

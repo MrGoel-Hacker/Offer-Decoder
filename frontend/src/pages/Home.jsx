@@ -37,7 +37,7 @@ const Hero = ({ limits, country }) => (
     </h1>
     <p className="fade-up mt-5 max-w-xl text-base text-[var(--text-dim)]" style={{ animationDelay: "100ms" }} data-testid="landing-hero-subtitle">
       {country === "us"
-        ? "Drop in your offer and get the real monthly take-home, a full comp breakdown, red flags and what to negotiate - with 2026 federal, state and FICA math done to the dollar."
+        ? "Drop in your offer and get the real monthly take-home, a full comp breakdown, red flags and what to negotiate - with 2026 federal and FICA math plus state estimates. Not tax advice."
         : "Drop in your offer and get the real monthly in-hand, a full CTC breakdown, red flags and what to negotiate - with tax math done to the rupee for FY 2026-27."}
     </p>
     {limits && (

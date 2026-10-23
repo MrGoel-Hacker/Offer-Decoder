@@ -3,6 +3,13 @@
 Source: Tax Foundation, "State Individual Income Tax Rates and Brackets, 2026"
 (data as of February 11, 2026): https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/
 
+Verified at owning state agencies on 2026-10-23: CA (ftb.ca.gov - latest published
+schedule is TY2025; 2026 instructions reuse it), NY (tax.ny.gov), NJ (nj.gov/treasury/taxation),
+MA (mass.gov - TY2026 surtax threshold $1,107,750), IL (tax.illinois.gov - 2026 exemption $2,925),
+TX (comptroller.texas.gov - no individual income tax), WA (dor.wa.gov - no wage income tax;
+a 9.9% tax over $1M AGI starts 2028). All other states use the Tax Foundation table and are
+NOT source-verified.
+
 Simplifications (labelled as estimates in the UI):
 - Standard deduction and deduction-type personal exemptions applied where listed;
   exemptions structured as tax CREDITS (AR, AZ, DE, NE, OR, UT and dependent credits) are ignored
@@ -19,7 +26,7 @@ STATES = {
     "AK": {"name": "Alaska", "none": True},
     "AZ": {"name": "Arizona", "std": 8350, "brackets": [(0, .025)]},
     "AR": {"name": "Arkansas", "std": 2470, "brackets": [(0, .02), (4600, .039)]},
-    "CA": {"name": "California", "std": 5540, "brackets": [(0, .01), (11079, .02), (26264, .04), (41452, .06), (57542, .08), (72724, .093), (371479, .103), (445771, .113), (742953, .123), (1000000, .133)]},
+    "CA": {"name": "California", "std": 5706, "note": "CA SDI (about 1.3% of wages, no cap) is not included.", "brackets": [(0, .01), (11079, .02), (26264, .04), (41452, .06), (57542, .08), (72724, .093), (371479, .103), (445771, .113), (742953, .123), (1000000, .133)]},
     "CO": {"name": "Colorado", "std": 16100, "brackets": [(0, .044)]},
     "CT": {"name": "Connecticut", "exempt": 15000, "brackets": [(0, .02), (10000, .045), (50000, .055), (100000, .06), (200000, .065), (250000, .069), (500000, .0699)]},
     "DE": {"name": "Delaware", "std": 3250, "brackets": [(2000, .022), (5000, .039), (10000, .048), (20000, .052), (25000, .0555), (60000, .066)]},
@@ -36,7 +43,7 @@ STATES = {
     "LA": {"name": "Louisiana", "std": 12875, "brackets": [(0, .03)]},
     "ME": {"name": "Maine", "std": 8350, "exempt": 5300, "brackets": [(0, .058), (27399, .0675), (64849, .0715)]},
     "MD": {"name": "Maryland", "std": 3350, "exempt": 3200, "brackets": [(0, .02), (1000, .03), (2000, .04), (3000, .0475), (100000, .05), (125000, .0525), (150000, .055), (250000, .0575), (500000, .0625), (1000000, .065)]},
-    "MA": {"name": "Massachusetts", "exempt": 4400, "brackets": [(0, .05), (1083150, .09)]},
+    "MA": {"name": "Massachusetts", "exempt": 4400, "note": "MA PFML payroll contributions are not included.", "brackets": [(0, .05), (1107750, .09)]},
     "MI": {"name": "Michigan", "exempt": 5900, "brackets": [(0, .0425)]},
     "MN": {"name": "Minnesota", "std": 15300, "brackets": [(0, .0535), (33310, .068), (109430, .0785), (203150, .0985)]},
     "MS": {"name": "Mississippi", "std": 2300, "exempt": 6000, "brackets": [(10000, .04)]},
@@ -45,9 +52,9 @@ STATES = {
     "NE": {"name": "Nebraska", "std": 8850, "brackets": [(0, .0246), (4130, .0351), (24760, .0455)]},
     "NV": {"name": "Nevada", "none": True},
     "NH": {"name": "New Hampshire", "none": True},
-    "NJ": {"name": "New Jersey", "exempt": 1000, "brackets": [(0, .014), (20000, .0175), (35000, .035), (40000, .0553), (75000, .0637), (500000, .0897), (1000000, .1075)]},
+    "NJ": {"name": "New Jersey", "exempt": 1000, "note": "NJ employee payroll contributions (unemployment/disability/family leave) are not included.", "brackets": [(0, .014), (20000, .0175), (35000, .035), (40000, .05525), (75000, .0637), (500000, .0897), (1000000, .1075)]},
     "NM": {"name": "New Mexico", "std": 16100, "brackets": [(0, .015), (5500, .032), (16500, .043), (33500, .047), (66500, .049), (210000, .059)]},
-    "NY": {"name": "New York", "std": 8000, "brackets": [(0, .039), (8500, .044), (11700, .0515), (13900, .054), (80650, .059), (215400, .0685), (1077550, .0965), (5000000, .103), (25000000, .109)]},
+    "NY": {"name": "New York", "std": 8000, "note": "NY benefit recapture above $107,650 income and NY paid family leave are not included (actual tax can be slightly higher).", "brackets": [(0, .039), (8500, .044), (11700, .0515), (13900, .054), (80650, .059), (215400, .0685), (1077550, .0965), (5000000, .103), (25000000, .109)]},
     "NC": {"name": "North Carolina", "std": 12750, "brackets": [(0, .0399)]},
     "ND": {"name": "North Dakota", "std": 16100, "brackets": [(48475, .0195), (244825, .025)]},
     "OH": {"name": "Ohio", "exempt": 2400, "brackets": [(26050, .0275)]},
