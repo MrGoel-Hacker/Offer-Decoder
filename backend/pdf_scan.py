@@ -2,6 +2,7 @@
 import base64
 import io
 import logging
+import traceback
 
 logger = logging.getLogger("pdf_scan")
 
