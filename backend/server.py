@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
@@ -201,7 +201,7 @@ async def extract_text(req: TextRequest, request: Request):
 
 
 @api.post("/extract/pdf")
-async def extract_pdf(request: Request, file: UploadFile = File(...), country: str = "in"):
+async def extract_pdf(request: Request, file: UploadFile = File(...), country: str = Form("in")):
     country = norm_country(country)
     data = await file.read()
     if len(data) > MAX_PDF_BYTES:
@@ -228,7 +228,7 @@ async def extract_pdf(request: Request, file: UploadFile = File(...), country: s
 
 
 @api.post("/extract/images")
-async def extract_images(request: Request, files: List[UploadFile] = File(...), country: str = "in"):
+async def extract_images(request: Request, files: List[UploadFile] = File(...), country: str = Form("in")):
     country = norm_country(country)
     if not files or len(files) > MAX_IMAGES:
         raise HTTPException(400, f"Upload 1 to {MAX_IMAGES} images.")
