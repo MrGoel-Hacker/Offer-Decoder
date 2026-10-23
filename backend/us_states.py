@@ -4,7 +4,9 @@ Source: Tax Foundation, "State Individual Income Tax Rates and Brackets, 2026"
 (data as of February 11, 2026): https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/
 
 Verified at owning state agencies on 2026-10-23: CA (ftb.ca.gov - latest published
-schedule is TY2025; 2026 instructions reuse it), NY (tax.ny.gov), NJ (nj.gov/treasury/taxation),
+schedule is TY2025; 2026 instructions reuse it), NY (tax.ny.gov NYS-50-T-NYS 1/26 - official
+revised 2026 schedule incl. benefit recapture rows; above $1,077,550 taxable the latest published
+filing top rates are used as an approximation), NJ (nj.gov/treasury/taxation),
 MA (mass.gov - TY2026 surtax threshold $1,107,750), IL (tax.illinois.gov - 2026 exemption $2,925),
 TX (comptroller.texas.gov - no individual income tax), WA (dor.wa.gov - no wage income tax;
 a 9.9% tax over $1M AGI starts 2028). All other states use the Tax Foundation table and are
@@ -26,7 +28,7 @@ STATES = {
     "AK": {"name": "Alaska", "none": True},
     "AZ": {"name": "Arizona", "std": 8350, "brackets": [(0, .025)]},
     "AR": {"name": "Arkansas", "std": 2470, "brackets": [(0, .02), (4600, .039)]},
-    "CA": {"name": "California", "std": 5706, "note": "CA SDI (about 1.3% of wages, no cap) is not included.", "brackets": [(0, .01), (11079, .02), (26264, .04), (41452, .06), (57542, .08), (72724, .093), (371479, .103), (445771, .113), (742953, .123), (1000000, .133)]},
+    "CA": {"name": "California", "std": 5706, "note": "CA 2026 schedule is not yet published - using the latest published (2025) CA brackets and deduction. CA SDI (about 1.3% of wages, no cap) is not included.", "brackets": [(0, .01), (11079, .02), (26264, .04), (41452, .06), (57542, .08), (72724, .093), (371479, .103), (445771, .113), (742953, .123), (1000000, .133)]},
     "CO": {"name": "Colorado", "std": 16100, "brackets": [(0, .044)]},
     "CT": {"name": "Connecticut", "exempt": 15000, "brackets": [(0, .02), (10000, .045), (50000, .055), (100000, .06), (200000, .065), (250000, .069), (500000, .0699)]},
     "DE": {"name": "Delaware", "std": 3250, "brackets": [(2000, .022), (5000, .039), (10000, .048), (20000, .052), (25000, .0555), (60000, .066)]},
@@ -54,7 +56,7 @@ STATES = {
     "NH": {"name": "New Hampshire", "none": True},
     "NJ": {"name": "New Jersey", "exempt": 1000, "note": "NJ employee payroll contributions (unemployment/disability/family leave) are not included.", "brackets": [(0, .014), (20000, .0175), (35000, .035), (40000, .05525), (75000, .0637), (500000, .0897), (1000000, .1075)]},
     "NM": {"name": "New Mexico", "std": 16100, "brackets": [(0, .015), (5500, .032), (16500, .043), (33500, .047), (66500, .049), (210000, .059)]},
-    "NY": {"name": "New York", "std": 8000, "note": "NY benefit recapture above $107,650 income and NY paid family leave are not included (actual tax can be slightly higher).", "brackets": [(0, .039), (8500, .044), (11700, .0515), (13900, .054), (80650, .059), (215400, .0685), (1077550, .0965), (5000000, .103), (25000000, .109)]},
+    "NY": {"name": "New York", "std": 8000, "note": "NY uses its revised 2026 schedule incl. the high-income benefit recapture (tax.ny.gov NYS-50-T-NYS, effective Jan 1, 2026). NY paid family leave is not included.", "brackets": [(0, .039), (8500, .044), (11700, .0515), (13900, .054), (80650, .059), (96800, .0703), (107650, .0753), (157650, .064), (215400, .1144), (265400, .0735), (1077550, .0965), (5000000, .103), (25000000, .109)]},
     "NC": {"name": "North Carolina", "std": 12750, "brackets": [(0, .0399)]},
     "ND": {"name": "North Dakota", "std": 16100, "brackets": [(48475, .0195), (244825, .025)]},
     "OH": {"name": "Ohio", "exempt": 2400, "brackets": [(26050, .0275)]},

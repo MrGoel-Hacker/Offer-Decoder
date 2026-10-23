@@ -85,3 +85,10 @@ def test_ma_surtax_threshold_2026():
     r = decode_us({"baseSalary": 1200000, "state": "MA"})
     # mass.gov: TY2026 surtax threshold $1,107,750
     assert r["taxFixed"]["stateTax"] == 63294
+
+
+def test_ny_revised_2026_schedule_with_recapture():
+    r = decode_us({"baseSalary": 150000, "state": "NY"})
+    # tax.ny.gov NYS-50-T-NYS (1/26) annual schedule incl. benefit recapture rows:
+    # taxable 142000 -> 5906 + 7.53% * (142000-107650) = 8492 (rounded)
+    assert r["taxFixed"]["stateTax"] == 8492
