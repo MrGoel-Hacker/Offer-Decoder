@@ -15,8 +15,8 @@ export const aiToSession = (res, source, country) => {
   };
 };
 
-export const runQuickScan = async (text, onQuickScan) => {
-  const { data } = await http.post("/quickscan", { text });
+export const runQuickScan = async (text, onQuickScan, country = "in") => {
+  const { data } = await http.post("/quickscan", { text, country });
   if (!data.found.length) toast.warning("Quick scan found no amounts - fill the form by hand.");
-  onQuickScan({ fields: data.fields, clauseFlags: data.flags, scanNotes: data.notes, beta: true });
+  onQuickScan({ fields: data.fields, clauseFlags: data.flags, scanNotes: data.notes, state: data.state, beta: true });
 };

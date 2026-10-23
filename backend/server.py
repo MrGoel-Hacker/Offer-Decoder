@@ -24,7 +24,7 @@ from decoder import decode  # noqa: E402
 from us_decoder import INPUT_KEYS_US, decode_us  # noqa: E402
 from us_states import STATES  # noqa: E402
 from flag_guide import enrich  # noqa: E402
-from quickscan import clause_flags, quick_scan  # noqa: E402
+from quickscan import clause_flags, quick_scan, quick_scan_us, us_clause_flags  # noqa: E402
 
 client = AsyncIOMotorClient(os.environ["MONGO_URL"])
 db = client[os.environ["DB_NAME"]]
@@ -141,7 +141,7 @@ def clean_input(raw, country="in"):
 def run_decode(req: DecodeRequest):
     country = norm_country(req.country)
     texts = [t.strip()[:220] for t in req.clauseFlags if t and t.strip()][:12]
-    texts += [t for t in clause_flags(req.notes[:5000]) if t not in texts]
+    texts += [t for t in (us_clause_flags if country == "us" else clause_flags)(req.notes[:5000]) if t not in texts]
     inp = {**clean_input(req.input, country), "textFlags": [{"level": "warn", "text": t, "source": "clause"} for t in texts]}
     if country == "us":
         result = decode_us(inp)
@@ -190,6 +190,8 @@ async def decode_offer(req: DecodeRequest):
 
 @api.post("/quickscan")
 async def quickscan(req: TextRequest):
+    if norm_country(req.country) == "us":
+        return quick_scan_us(req.text[:MAX_TEXT])
     return quick_scan(req.text[:MAX_TEXT])
 
 

@@ -77,8 +77,8 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
     }
   };
 
-  const scan = () => runQuickScan(text, onQuickScan).catch((e) => toast.error(errMsg(e)));
-  const scanPdfText = () => runQuickScan(notice.pdfText, onQuickScan).catch((e) => toast.error(errMsg(e)));
+  const scan = () => runQuickScan(text, onQuickScan, country).catch((e) => toast.error(errMsg(e)));
+  const scanPdfText = () => runQuickScan(notice.pdfText, onQuickScan, country).catch((e) => toast.error(errMsg(e)));
 
   const canDecode = !busy && (pdf || images.length > 0 || text.trim().length >= 40);
   const busyLabel = pdf ? "Reading the PDF" : images.length ? "Reading the images" : "Reading your letter";
@@ -147,7 +147,7 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
         <button type="button" className="btn-accent" disabled={!canDecode} onClick={decode} data-testid="decode-ai-button">
           <Sparkles size={16} /> Decode with AI
         </button>
-        {country !== "us" && !hasFiles && (
+        {!hasFiles && (
           <button type="button" className="btn-ghost" disabled={busy || !text.trim()} onClick={scan} data-testid="quick-scan-button">
             <ScanText size={16} /> Quick scan <span className="text-[10px] uppercase tracking-wider text-[var(--warn-strong)]">Beta</span>
           </button>
@@ -158,16 +158,16 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
         <button type="button" onClick={() => fileRef.current?.click()} className="font-semibold text-[var(--text-dim)] underline underline-offset-2 hover:text-[var(--accent-text)]" data-testid="browse-files-button">
           Choose a PDF or photos
         </button>{" "}
-        {country === "us" ? "or paste the letter. Files are read in memory and never stored." : "or paste the letter. Quick scan runs offline (no AI) and pre-fills the form for you to verify."}
+        or paste the letter. Quick scan runs offline (no AI) and pre-fills the form for you to verify.
       </p>
 
       {busy && <Scanning label={busyLabel} />}
       {notice && (
         <AiNotice message={notice.message}>
-          {country !== "us" && notice.pdfText && notice.pdfText.length > 20 && (
+          {notice.pdfText && notice.pdfText.length > 20 && (
             <button type="button" className="btn-ghost !py-2 !px-4" onClick={scanPdfText} data-testid="pdf-quick-scan-button">Quick scan the PDF text</button>
           )}
-          {country !== "us" && !hasFiles && text.trim() && (
+          {!hasFiles && text.trim() && (
             <button type="button" className="btn-ghost !py-2 !px-4" onClick={scan} data-testid="notice-quick-scan-button">Quick scan instead</button>
           )}
           <button type="button" className="btn-ghost !py-2 !px-4" onClick={() => onQuickScan({})} data-testid="notice-manual-button">Enter manually</button>
