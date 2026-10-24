@@ -376,6 +376,14 @@ async def payments_config():
     return {"enabled": payments.is_enabled()}
 
 
+@api.get("/payments/status/{rid}")
+async def payments_status(rid: str, request: Request):
+    user = await auth.require_user(db, request)
+    if not payments.is_enabled():
+        return {"enabled": False, "paid": False}
+    return {"enabled": True, "paid": await payments.has_paid(db, user["_id"], rid[:80])}
+
+
 @api.post("/payments/checkout")
 async def payments_checkout(body: dict, request: Request):
     user = await auth.require_user(db, request)

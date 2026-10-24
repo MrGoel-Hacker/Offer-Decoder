@@ -71,7 +71,7 @@ async def create_checkout(user: dict, report_id: str, purchase_id: str) -> dict:
     payload = {
         "product_cart": [{"product_id": s["product_id"], "quantity": 1}],
         "customer": {"email": user.get("email", ""), "name": user.get("name", "")},
-        "return_url": f"{s['public_url']}/my/reports",
+        "return_url": f"{s['public_url']}/pack/{report_id}",
         "metadata": {"purchase_id": purchase_id, "report_id": report_id},
     }
     try:

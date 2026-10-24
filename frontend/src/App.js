@@ -6,6 +6,7 @@ import Home from "@/pages/Home";
 import SharedReport from "@/pages/SharedReport";
 import MyReports from "@/pages/MyReports";
 import Privacy from "@/pages/Privacy";
+import Pack from "@/pages/Pack";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/lib/auth";
 import { applyTheme, getTheme, useTheme } from "@/lib/theme";
@@ -25,6 +26,7 @@ function App() {
           <Route path="/r/:id" element={<SharedReport />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/my/reports" element={<MyReports />} />
+          <Route path="/pack/:id" element={<Pack />} />
         </Routes>
         <footer className="max-w-3xl mx-auto px-5 py-12 text-xs text-[var(--text-faint)]" data-testid="site-footer">
           India: new regime, FY 2026-27 · US: tax year 2026, single filer. Estimates only - not tax advice. No login to decode; sign in only if you save a report.{" "}

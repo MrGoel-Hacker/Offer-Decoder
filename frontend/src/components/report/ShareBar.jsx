@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { http, errMsg, toPayload } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { AuthModal } from "@/components/AuthModal";
+import { PackCard } from "@/components/report/PackCard";
 
 export const ShareBar = ({ session, input }) => {
   const { user, authHeaders } = useAuth();
@@ -88,6 +89,7 @@ export const ShareBar = ({ session, input }) => {
           <Save size={16} /> {busy ? "Saving…" : "Save report"}
         </button>
       )}
+      {savedId && <PackCard reportId={savedId} />}
       <AuthModal
         open={showAuth}
         onClose={() => setShowAuth(false)}
