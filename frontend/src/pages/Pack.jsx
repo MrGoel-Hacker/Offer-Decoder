@@ -39,6 +39,8 @@ const Section = ({ title, children }) => (
 
 const Pack = () => {
   const { id } = useParams();
+  const fromCheckout = new URLSearchParams(window.location.search).get("from") === "checkout";
+  const [buying, setBuying] = useState(false);
   const { user, ready, authHeaders } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [pack, setPack] = useState(null);
@@ -68,10 +70,10 @@ const Pack = () => {
 
   // The payment webhook can arrive a few seconds after the redirect back from checkout.
   useEffect(() => {
-    if (status !== "locked" || attempt >= 4) return undefined;
+    if (!fromCheckout || status !== "locked" || attempt >= 4) return undefined;
     const t = setTimeout(() => setAttempt((n) => n + 1), 3000);
     return () => clearTimeout(t);
-  }, [status, attempt]);
+  }, [status, attempt, fromCheckout]);
 
   useEffect(() => {
     if (status !== "ok") return;
@@ -90,6 +92,17 @@ const Pack = () => {
     }
   };
 
+  const unlock = async () => {
+    setBuying(true);
+    try {
+      const { data } = await http.post("/payments/checkout", { reportId: id }, { headers: authHeaders() });
+      window.location.href = data.checkoutUrl;
+    } catch (e) {
+      toast.error(errMsg(e, "Couldn't start checkout. Please try again."));
+      setBuying(false);
+    }
+  };
+
   const fmtMoney = (c, n) => (c === "us" ? `$${Math.round(n).toLocaleString("en-US")}` : `₹${Math.round(n).toLocaleString("en-IN")}`);
 
   return (
@@ -103,14 +116,26 @@ const Pack = () => {
       {status === "loading" && <p className="mt-8 text-sm text-[var(--text-dim)]">Loading…</p>}
       {status === "locked" && (
         <div className="card mt-8" data-testid="pack-locked">
-          <p className="text-sm text-[var(--text-dim)]">
-            {attempt < 4 ? "Checking your payment…" : "This report hasn't been unlocked. If you just paid, it can take a minute to confirm."}
-          </p>
-          {attempt >= 4 && (
-            <div className="mt-3 flex gap-3">
-              <button type="button" className="btn-accent" onClick={() => { setStatus("loading"); setAttempt(0); }}>Check again</button>
-              <Link to="/my/reports" className="btn-accent">My reports</Link>
-            </div>
+          {fromCheckout && attempt < 4 ? (
+            <p className="text-sm text-[var(--text-dim)]">Checking your payment…</p>
+          ) : (
+            <>
+              <p className="text-sm text-[var(--text-dim)]">
+                {fromCheckout
+                  ? "We haven't received your payment confirmation yet. It can take a minute."
+                  : "The Offer Pack isn't unlocked for this report yet."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {fromCheckout && (
+                  <button type="button" className="btn-ghost" onClick={() => { setStatus("loading"); setAttempt(0); }}>Check again</button>
+                )}
+                <button type="button" className="btn-accent" disabled={buying} onClick={unlock} data-testid="pack-unlock-button">
+                  {buying ? "Opening checkout…" : "Unlock Offer Pack"}
+                </button>
+                <Link to="/my/reports" className="btn-ghost">My reports</Link>
+              </div>
+              <p className="mt-3 text-xs text-[var(--text-faint)]">One-time purchase for this report. The price is shown at checkout. Payment is handled by Dodo Payments.</p>
+            </>
           )}
         </div>
       )}
