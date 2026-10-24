@@ -20,6 +20,7 @@ load_dotenv(ROOT_DIR / ".env")
 import ai_extract  # noqa: E402
 import auth  # noqa: E402
 import pdf_scan  # noqa: E402
+import offer_pack  # noqa: E402
 import payments  # noqa: E402
 from decoder import decode  # noqa: E402
 from us_decoder import INPUT_KEYS_US, decode_us  # noqa: E402
@@ -385,6 +386,43 @@ async def payments_checkout(body: dict, request: Request):
 @api.post("/payments/webhook")
 async def payments_webhook(request: Request):
     return await payments.handle_webhook(db, request.headers, await request.body())
+
+
+async def _paid_report(user, rid):
+    if not payments.is_enabled():
+        raise HTTPException(503, "Not available yet.")
+    rid = str(rid or "")[:80]
+    rep = await db.reports.find_one({"_id": rid, "ownerUserId": user["_id"]})
+    if not rep:
+        raise HTTPException(404, "Report not found.")
+    if not await payments.has_paid(db, user["_id"], rid):
+        raise HTTPException(402, "This report has not been unlocked.")
+    return rep
+
+
+@api.post("/pack/negotiation")
+async def pack_negotiation(body: dict, request: Request):
+    user = await auth.require_user(db, request)
+    rep = await _paid_report(user, body.get("reportId"))
+    try:
+        ask = float(body.get("askPct") or offer_pack.DEFAULT_ASK_PCT)
+    except (TypeError, ValueError):
+        ask = offer_pack.DEFAULT_ASK_PCT
+    return offer_pack.negotiation_pack(rep, ask)
+
+
+@api.post("/pack/compare")
+async def pack_compare(body: dict, request: Request):
+    user = await auth.require_user(db, request)
+    a = await _paid_report(user, body.get("reportIdA"))
+    other = str(body.get("reportIdB") or "")[:80]
+    b = await db.reports.find_one({"_id": other, "ownerUserId": user["_id"]})
+    if not b:
+        raise HTTPException(404, "Second report not found.")
+    try:
+        return offer_pack.compare_offers(a, b)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 app.include_router(api)

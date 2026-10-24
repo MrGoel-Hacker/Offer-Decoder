@@ -129,3 +129,8 @@ async def handle_webhook(db, headers, body: bytes) -> dict:
         await db.purchases.update_one({"_id": purchase_id, "status": {"$ne": "paid"}}, {"$set": update})
     await db.webhook_events.insert_one({"_id": wid, "type": etype, "createdAt": datetime.now(timezone.utc)})
     return {"received": True}
+
+
+async def has_paid(db, user_id: str, report_id: str) -> bool:
+    """True when this user has a confirmed (webhook-verified) purchase for this report."""
+    return bool(await db.purchases.find_one({"userId": user_id, "reportId": report_id, "status": "paid"}))
