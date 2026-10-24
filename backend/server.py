@@ -20,6 +20,7 @@ load_dotenv(ROOT_DIR / ".env")
 import ai_extract  # noqa: E402
 import auth  # noqa: E402
 import pdf_scan  # noqa: E402
+import payments  # noqa: E402
 from decoder import decode  # noqa: E402
 from us_decoder import INPUT_KEYS_US, decode_us  # noqa: E402
 from us_states import STATES  # noqa: E402
@@ -369,6 +370,23 @@ async def delete_my_report(rid: str, request: Request):
     return {"ok": True}
 
 
+@api.get("/payments/config")
+async def payments_config():
+    return {"enabled": payments.is_enabled()}
+
+
+@api.post("/payments/checkout")
+async def payments_checkout(body: dict, request: Request):
+    user = await auth.require_user(db, request)
+    rid = str(body.get("reportId", ""))[:80]
+    return await payments.start_checkout(db, user, rid)
+
+
+@api.post("/payments/webhook")
+async def payments_webhook(request: Request):
+    return await payments.handle_webhook(db, request.headers, await request.body())
+
+
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware, allow_credentials=False,
@@ -383,6 +401,8 @@ async def indexes():
     await db.reports.create_index("ownerUserId")
     await db.sessions.create_index("expiresAt", expireAfterSeconds=0)
     await db.usage.create_index("expiresAt", expireAfterSeconds=0)
+    await db.purchases.create_index("userId")
+    await db.webhook_events.create_index("createdAt", expireAfterSeconds=60 * 60 * 24 * 30)
 
 
 @app.on_event("shutdown")

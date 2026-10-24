@@ -60,6 +60,11 @@ The backend serves `frontend/build` itself; open `http://localhost:8001`.
 | `OPENROUTER_API_KEY` | OpenRouter key for AI offer-letter reading (free models only). Leave empty to run the app without AI |
 | `APP_PUBLIC_URL` | Public site URL, sent to OpenRouter as the HTTP-Referer header |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client ID for sign-in (public value, embedded in the frontend too). Sign-in returns 503 until set |
+| `PAYMENTS_ENABLED` | Set to `true` to turn on the Dodo Payments endpoints (`/api/payments/*`). Off by default; nothing in the app requires a purchase |
+| `DODO_PAYMENTS_ENV` | `test` (default) or `live` |
+| `DODO_PAYMENTS_API_KEY` | Dodo API key (secret) |
+| `DODO_PAYMENTS_WEBHOOK_KEY` | Dodo webhook signing secret `whsec_...` (secret). Webhook URL: `/api/payments/webhook` |
+| `DODO_PRODUCT_ID` | Id of the one-time product created in the Dodo dashboard |
 
 Never commit a real `.env`; it is gitignored.
 
