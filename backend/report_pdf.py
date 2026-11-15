@@ -42,7 +42,11 @@ def render_report(session, result, created_at):
                               ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
                               ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.HexColor("#f1f5f9"), colors.white]),
                               ("LINEBELOW", (0, 0), (-1, -1), .3, colors.HexColor("#e2e8f0"))]))
-        story.append(KeepTogether([t]) if len(rows) <= 8 else t)
+        if len(rows) <= 8 and story and getattr(story[-1], "style", None) is styles["Heading2"]:
+            heading = story.pop()
+            story.append(KeepTogether([heading, t]))
+        else:
+            story.append(KeepTogether([t]) if len(rows) <= 8 else t)
     table([("Headline annual compensation" if us else "Headline annual CTC", money(result.get("ctc"))),
            ("Fixed take-home per year", money(result.get("annualTakeHomeFixed"))),
            ("Yearly average per month if variable / equity pays in full", money(result.get("monthlyWithVariable"))),
