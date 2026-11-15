@@ -73,7 +73,7 @@ export default function Privacy() {
 
         <Section title="Saved reports are private; share links are your choice">
           <p>
-            Nothing is saved unless you explicitly save a report, which requires sign-in. A saved report stores the numbers you
+            Saving a report to My reports requires sign-in. Separately, starting a paid checkout saves a purchase snapshot as described below. An account-saved report stores the numbers you
             entered, any clause flags and notes, and the company and role, in a MongoDB Atlas database, linked to your account.
             Only you can see it, under My reports, and you can delete it yourself at any time.
           </p>

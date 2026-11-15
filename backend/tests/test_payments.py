@@ -86,8 +86,9 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
             return self.allowed
 
         app = FastAPI()
-        app.include_router(payments.make_router(NS(payment_orders=self.orders), lambda req: {"ctc": req.input["ctc"]},
-                                               lambda raw, country: {"ctc": raw.get("ctc")}, bump, lambda: "today", lambda req: "ip"))
+        app.include_router(payments.make_router(NS(payment_orders=self.orders),
+                                               lambda req: {"baseSalary": req.input["baseSalary"], "country": req.country} if req.country == "us" else {"ctc": req.input["ctc"]},
+                                               lambda raw, country: dict(raw), bump, lambda: "today", lambda req: "ip"))
         self.client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
 
     async def asyncTearDown(self):
@@ -111,6 +112,16 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         order = next(iter(self.orders.docs.values()))
         self.assertEqual((order["amount"], order["currency"]), (500, "USD"))
         self.assertEqual(self.checkout_args["product_cart"][0]["product_id"], "pdt_usa")
+
+    async def test_us_report_preserves_us_salary_and_country(self):
+        response = await self.client.post("/payments/checkout", json={
+            "country": "us", "billingCountry": "US", "input": {"baseSalary": 120000, "state": "NY"},
+        })
+        self.assertEqual(response.status_code, 200)
+        order = next(iter(self.orders.docs.values()))
+        self.assertEqual(order["payload"]["country"], "us")
+        self.assertEqual(order["payload"]["input"]["state"], "NY")
+        self.assertEqual(order["result"], {"baseSalary": 120000, "country": "us"})
 
     async def test_redirect_status_cannot_unlock_pending_payment(self):
         token = (await self.buy()).json()["reportToken"]
@@ -141,6 +152,18 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         token = (await self.buy()).json()["reportToken"]
         next(iter(self.orders.docs.values()))["expiresAt"] = payments.datetime(2000, 1, 1, tzinfo=payments.timezone.utc)
         self.assertEqual((await self.client.get(f"/payments/orders/{token}")).status_code, 404)
+
+    async def test_report_endpoints_cannot_bypass_enabled_payments(self):
+        with patch.dict(os.environ, {"MONGO_URL": "mongodb://127.0.0.1:27017", "DB_NAME": "offline_payment_test"}):
+            import server
+        async with AsyncClient(transport=ASGITransport(app=server.app), base_url="http://test") as client:
+            payload = {"country": "us", "input": {"baseSalary": 120000}}
+            self.assertEqual((await client.post("/api/decode", json=payload)).status_code, 402)
+            self.assertEqual((await client.post("/api/reports", json=payload)).status_code, 402)
+            os.environ["DODO_PAYMENTS_ENABLED"] = "false"
+            free = await client.post("/api/decode", json=payload)
+            self.assertEqual(free.status_code, 200)
+            self.assertEqual(free.json()["country"], "us")
 
 
 if __name__ == "__main__":

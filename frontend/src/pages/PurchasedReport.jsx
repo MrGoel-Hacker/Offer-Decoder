@@ -28,12 +28,12 @@ export default function PurchasedReport() {
     return () => { stopped = true; clearTimeout(timer); };
   }, [token, attempt]);
   const checkoutUrl = sessionStorage.getItem(`offerdecode:checkout:${token}`);
-  if (doc?.status === "paid") return <main data-clarity-mask="true" className="max-w-3xl mx-auto px-5 ph-no-capture"><p className="mt-6 text-sm text-emerald-400">Payment verified · Bookmark this private link to reopen your report.</p><ReportView readOnly session={doc.session} stored={doc.result} expiresAt={doc.expiresAt} /></main>;
+  if (doc?.status === "paid") return <main data-clarity-mask="true" className="max-w-3xl mx-auto px-5 ph-no-capture"><p className="mt-6 text-sm text-[var(--accent-text)]">Payment verified · Bookmark this private link to reopen your report.</p><ReportView readOnly session={doc.session} stored={doc.result} expiresAt={doc.expiresAt} /></main>;
   return <main className="max-w-3xl mx-auto px-5 py-12 space-y-5">
     <h1 className="text-3xl font-display font-bold">{doc?.status === "review_required" ? "Payment needs review" : doc?.status === "failed" ? "Payment wasn't completed" : "Verifying your payment"}</h1>
-    <p className="text-slate-400">{error || (doc?.status === "review_required" ? "This payment doesn't currently grant access. It may have been refunded or disputed, or its details may not match the order. Don't pay again; contact the website owner with your Dodo receipt." : "Your report unlocks after payment is confirmed. If you have already paid, don't pay again; retry verification.")}</p>
+    <p className="text-[var(--text-dim)]">{error || (doc?.status === "review_required" ? "This payment doesn't currently grant access. It may have been refunded or disputed, or its details may not match the order. Don't pay again; contact the website owner with your Dodo receipt." : "Your report unlocks after payment is confirmed. If you have already paid, don't pay again; retry verification.")}</p>
     <button className="btn-primary" onClick={() => setAttempt((n) => n + 1)}>Check payment again</button>
-    {checkoutUrl && doc?.status !== "review_required" && <a className="block text-emerald-400" href={checkoutUrl}>Return to checkout if you haven't paid</a>}
-    <Link to="/" className="block text-slate-400">Back to Offer Decoder</Link>
+    {checkoutUrl && doc?.status !== "review_required" && <a className="block text-[var(--accent-text)]" href={checkoutUrl}>Return to checkout if you haven't paid</a>}
+    <Link to="/" className="block text-[var(--text-dim)]">Back to Offer Decoder</Link>
   </main>;
 }

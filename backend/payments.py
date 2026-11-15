@@ -1,5 +1,6 @@
 """One checkout buys one immutable report; redirects never prove payment."""
 import hashlib
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -12,6 +13,12 @@ PRICES = {
     "IN": {"currency": "INR", "original": 50000, "amount": 12500},
     "US": {"currency": "USD", "original": 2000, "amount": 500},
 }
+
+
+class PrivateReportAccessFilter(logging.Filter):
+    def filter(self, record):
+        message = record.getMessage()
+        return "/checkout/" not in message and "/payments/orders/" not in message
 
 
 def enabled():
@@ -64,7 +71,10 @@ def make_router(db, decode_request, clean_input, bump, today, client_ip):
 
     @router.get("/config")
     async def config():
-        return {"enabled": enabled(), "testMode": os.environ.get("DODO_PAYMENTS_ENVIRONMENT", "test_mode") != "live_mode", "prices": PRICES}
+        configured = all(os.environ.get(key, "").strip() for key in (
+            "DODO_PAYMENTS_API_KEY", "DODO_PRODUCT_IN", "DODO_PRODUCT_US", "APP_PUBLIC_URL",
+        ))
+        return {"enabled": enabled(), "configured": configured, "testMode": os.environ.get("DODO_PAYMENTS_ENVIRONMENT", "test_mode") != "live_mode", "prices": PRICES}
 
     @router.post("/checkout")
     async def checkout(body: CheckoutRequest, request: Request):

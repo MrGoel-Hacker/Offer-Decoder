@@ -34,6 +34,7 @@ app = FastAPI(title="Offer Decode")
 api = APIRouter(prefix="/api")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # never log request headers/keys
+logging.getLogger("uvicorn.access").addFilter(payments.PrivateReportAccessFilter())
 
 # ---- RATE LIMIT: shareable report creation ----
 REPORTS_PER_IP_PER_DAY = 10

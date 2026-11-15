@@ -86,6 +86,7 @@ export default function Home() {
     <main className="max-w-3xl mx-auto px-5" data-testid="landing-page">
       <Hero limits={limits} country={country} payments={payments} />
       <CountryToggle country={country} onPick={pickCountry} />
+      {sessionStorage.getItem("offerdecode:lastReport") && <p className="mb-4 text-sm"><a className="text-[var(--accent-text)] underline" href={`/checkout/${sessionStorage.getItem("offerdecode:lastReport")}`}>Return to your last purchase</a></p>}
       <SmartInput key={country} country={country} onDecoded={setSession} onQuickScan={toManual} />
       <p className="mt-3 text-center text-[11px] text-[var(--text-faint)] fade-up" style={{ animationDelay: "400ms" }} data-testid="upload-privacy-note">
         Uploads are processed in memory and never stored.{" "}
