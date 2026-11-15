@@ -38,6 +38,7 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         self.orders = Orders()
         self.allowed = True
         self.country = "IN"
+        self.discount_bps = 7500
         self.payment = NS(status="succeeded", checkout_session_id="cks_123", currency="INR", total_amount=12500,
                           billing=NS(country="IN"), refunds=[], disputes=[], subscription_ids=[],
                           product_cart=[NS(product_id="pdt_india", quantity=1)], payment_id="pay_123")
@@ -58,7 +59,7 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
             async def product(self, product_id):
                 country = "IN" if product_id == "pdt_india" else "US"
                 p = payments.PRICES[country]
-                return NS(price=NS(type="one_time_price", currency=p["currency"], price=p["amount"], discount=0), pricing_mode=None)
+                return NS(price=NS(type="one_time_price", currency=p["currency"], price=p["original"], discount=75, discount_bps=owner.discount_bps), pricing_mode=None)
 
             @property
             def checkout_sessions(self):
@@ -112,6 +113,13 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         order = next(iter(self.orders.docs.values()))
         self.assertEqual((order["amount"], order["currency"]), (500, "USD"))
         self.assertEqual(self.checkout_args["product_cart"][0]["product_id"], "pdt_usa")
+
+    async def test_missing_or_incorrect_launch_discount_blocks_checkout(self):
+        for discount in (0, 5000, 10000):
+            with self.subTest(discount=discount):
+                self.discount_bps = discount
+                self.assertEqual((await self.buy()).status_code, 503)
+                self.assertFalse(self.orders.docs)
 
     async def test_us_report_preserves_us_salary_and_country(self):
         response = await self.client.post("/payments/checkout", json={

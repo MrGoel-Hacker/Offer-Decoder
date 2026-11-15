@@ -100,11 +100,14 @@ def make_router(db, decode_request, clean_input, bump, today, client_ip):
         async with dodo_client() as client:
             try:
                 product = await client.products.retrieve(product_id)
-                # Products are configured at the final launch price, with no stacking.
+                # Preserve the regular price and apply the launch discount in Dodo.
                 p = product.price
+                discount_bps = getattr(p, "discount_bps", None)
+                if discount_bps is None:
+                    discount_bps = (getattr(p, "discount", 0) or 0) * 100
                 if (p.type != "one_time_price" or p.currency != price["currency"]
-                        or p.price != price["amount"] or p.discount
-                        or getattr(p, "discount_bps", 0) or getattr(p, "pay_what_you_want", False)
+                        or p.price != price["original"] or discount_bps != 7500
+                        or getattr(p, "pay_what_you_want", False)
                         or getattr(p, "purchasing_power_parity", False) or product.pricing_mode):
                     raise HTTPException(503, "Checkout pricing is being configured. Please try later.")
                 await db.payment_orders.insert_one({

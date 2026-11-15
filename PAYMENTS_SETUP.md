@@ -1,18 +1,19 @@
 # Dodo Payments: one report per purchase
 
-Launch pricing: India INR 125 (reference price INR 500); USA USD 5
-(reference price USD 20). These are one-time purchases, not subscriptions.
+Regular pricing: India INR 500; USA USD 20. Dodo applies a 75% product discount,
+making launch purchases INR 125 / USD 5. These are one-time purchases, not subscriptions.
 The report's selected country (India or USA) determines its salary and tax rules.
 Billing country selects the checkout product and currency independently.
 
 ## Configure and test
 
-1. In Dodo **test mode**, create two one-time products at the final launch prices:
-   - India: INR 125 (`12500` paise).
-   - USA: USD 5 (`500` cents).
-   Disable pay-what-you-want, PPP, localized prices, additional discounts and
+1. In Dodo **test mode**, create two tax-inclusive one-time products:
+   - India: regular INR 500 (`50000` paise), with a 75% product discount → INR 125.
+   - USA: regular USD 20 (`2000` cents), with a 75% product discount → USD 5.
+   Set Discount Applicable to 75% in the dashboard (`discount_bps=7500` in the API).
+   Disable pay-what-you-want, PPP, localized prices, additional discount codes and
    customer-editable quantities. These two products use their base currency.
-   Do not apply another 75% discount: the launch discount is already in the price.
+   Do not apply a second discount code: the product discount supplies the launch gift.
 2. In the Render service's Environment settings, add these values securely:
 
    ```text
