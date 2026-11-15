@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Copy, Link2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { http, errMsg, toPayload } from "@/lib/api";
@@ -13,17 +13,26 @@ export const ShareBar = ({ session, input }) => {
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [needsCredits, setNeedsCredits] = useState(false);
+  const saveAttempt = useRef(null);
 
   const save = async () => {
     setBusy(true);
     try {
-      const { data } = await http.post("/reports", {
+      const payload = {
         input: toPayload(input), clauseFlags: session.clauseFlags || [], notes: session.notes || "",
         company: session.company || "", role: session.role || "", source: session.source || "manual", country: session.country || "in",
-      }, { headers: authHeaders() });
+      };
+      const fingerprint = JSON.stringify(payload);
+      if (saveAttempt.current?.fingerprint !== fingerprint) {
+        saveAttempt.current = { fingerprint, id: crypto.randomUUID() };
+      }
+      const { data } = await http.post("/reports", { ...payload, requestId: saveAttempt.current.id }, { headers: authHeaders() });
       setSavedId(data.id);
+      setNeedsCredits(false);
       toast.success("Saved to My reports - only you can see it.");
     } catch (e) {
+      if (e?.response?.status === 402) setNeedsCredits(true);
       toast.error(errMsg(e));
     } finally {
       setBusy(false);
@@ -66,6 +75,8 @@ export const ShareBar = ({ session, input }) => {
       <p className="mt-1 text-sm text-[var(--text-dim)]">
         Saved reports are private to your account and expire after 90 days. Want to send it to someone? Create a share link after saving - only then can anyone with the link view it, no login needed.
       </p>
+      {!savedId && <p className="mt-2 text-xs text-[var(--text-dim)]">Saving uses one report credit. Your first pack of 3 is {session.country === "us" ? "$5 (was $20)" : "₹125 (was ₹500)"}, including applicable taxes.</p>}
+      {needsCredits && <p className="mt-3 text-sm text-[var(--text-dim)]">You need a report credit. <a href={`/billing?region=${session.country === "us" ? "us" : "in"}`} target="_blank" rel="noreferrer" className="text-[var(--accent-text)] underline">Get your pack in a new tab</a>, then return here and save. Keep this tab open to preserve your result.</p>}
       {url ? (
         <div className="mt-4">
           <p className="mb-2 text-xs font-semibold text-[var(--accent-text)]">Share link created - anyone with this link can view the report.</p>

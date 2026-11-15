@@ -21,7 +21,8 @@ const UserMenu = () => {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 items-center gap-2 rounded-full border border-[var(--line-2)] pl-1 pr-3 text-xs font-semibold text-[var(--text)] hover:border-emerald-500/60"
+        aria-label="Open account menu"
+        className="flex h-8 items-center gap-2 rounded-full border border-[var(--line-2)] pl-1 pr-1 sm:pr-3 text-xs font-semibold text-[var(--text)] hover:border-emerald-500/60"
         data-testid="user-menu-button"
       >
         {user.picture ? (
@@ -29,7 +30,7 @@ const UserMenu = () => {
         ) : (
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15"><UserRound size={13} /></span>
         )}
-        <span className="max-w-[110px] truncate">{user.name.split(" ")[0]}</span>
+        <span className="hidden sm:inline max-w-[110px] truncate">{user.name.split(" ")[0]}</span>
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-44 rounded-xl border border-[var(--line)] bg-[var(--bg)] p-1.5 shadow-xl" data-testid="user-menu">
@@ -78,7 +79,8 @@ export const Header = () => {
           </span>
         </Link>
         <div className="flex items-center gap-2.5">
-          <span className="rounded-full border border-[var(--line-2)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dim)]" data-testid="regime-badge">
+          <Link to="/billing" className="text-xs font-semibold text-[var(--accent-text)]">Report packs</Link>
+          <span className="hidden sm:inline-block rounded-full border border-[var(--line-2)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dim)]" data-testid="regime-badge">
             India + US · 2026
           </span>
           {ready && (user ? (

@@ -18,3 +18,13 @@ services:
         sync: false
       - key: APP_PUBLIC_URL
         sync: false
+      - key: DODO_PAYMENTS_ENVIRONMENT
+        value: test_mode
+      - key: DODO_PAYMENTS_API_KEY
+        sync: false
+      - key: DODO_PAYMENTS_WEBHOOK_KEY
+        sync: false
+      - key: DODO_PRODUCT_ID_US
+        sync: false
+      - key: DODO_PRODUCT_ID_IN
+        sync: false

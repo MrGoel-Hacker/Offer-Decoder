@@ -64,6 +64,7 @@ const MyReports = () => {
       <p className="eyebrow">Your account</p>
       <h1 className="font-display text-3xl font-extrabold text-[var(--text)]">My reports</h1>
       <p className="mt-2 text-sm text-[var(--text-dim)]">Reports you have saved are private to you. Create a share link only if you want someone else to view one. Reports expire after 90 days.</p>
+      <Link to="/billing" className="mt-3 inline-block text-sm text-[var(--accent-text)] underline">View your report credits and pack</Link>
 
       {items === null ? (
         <p className="mt-8 text-sm text-[var(--text-dim)]">Loading…</p>

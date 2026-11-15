@@ -16,7 +16,7 @@ export default function Privacy() {
       </h1>
       <p className="fade-up mt-4 max-w-xl text-sm text-[var(--text-dim)]" style={{ animationDelay: "60ms" }}>
         Decoding an offer needs no account. Sign-in with Google is only needed when you save a report. This page explains, in plain terms,
-        what is processed when you use it. Last updated: October 2026.
+        what is processed when you use it. Last updated: November 2026.
       </p>
 
       <div className="mt-8 space-y-4">
@@ -67,7 +67,7 @@ export default function Privacy() {
             Decoding, Quick scan and manual entry work without any sign-in. If you want to save a report, you sign in with Google
             (Google's own sign-in window - we never see your Google password). We then store your name, email address and Google
             account ID so your saved reports belong to you, plus a sign-in session that expires after 30 days. That is the whole
-            account. Your offer letters are not attached to your identity beyond the reports you explicitly save.
+            account information. Your offer letters are not attached to your identity beyond the reports you explicitly save.
           </p>
         </Section>
 
@@ -94,9 +94,14 @@ export default function Privacy() {
           </p>
         </Section>
 
+        <Section title="Payments and report credits">
+          <p>When you buy a three-report pack, Dodo Payments handles checkout and payment details. We send your account name and email to Dodo Payments. We store an order reference, payment ID, purchase status, report credit balance, and report-save references linked to your account. Card details are entered on Dodo Payments' checkout and are not stored by OfferDecode.</p>
+          <p>Saving a new report consumes one credit. Reopening or sharing it uses no extra credit. Deleting a report does not restore its credit. A successful refund removes remaining credits; existing reports remain until deleted or expired. Report-save references contain an ID, content hash, and creation time, not the report text.</p>
+        </Section>
+
         <Section title="Rate limiting">
           <p>
-            To keep the free service fair, your IP address is used to count AI reads and saved reports per day. These counters
+            To keep AI reading available, your IP address is used to count AI reads per day. These counters
             expire within about two days and are not used for anything else.
           </p>
         </Section>

@@ -76,6 +76,7 @@ export default function Home() {
     <main className="max-w-3xl mx-auto px-5" data-testid="landing-page">
       <Hero limits={limits} country={country} />
       <CountryToggle country={country} onPick={pickCountry} />
+      <p className="mb-5 text-sm text-[var(--text-dim)]">Preview for free. <Link to={`/billing?region=${country}`} className="text-[var(--accent-text)] underline">Save your first 3 reports for {country === "us" ? "$5 instead of $20" : "₹125 instead of ₹500"} · 75% off</Link></p>
       <SmartInput key={country} country={country} onDecoded={setSession} onQuickScan={toManual} />
       <p className="mt-3 text-center text-[11px] text-[var(--text-faint)] fade-up" style={{ animationDelay: "400ms" }} data-testid="upload-privacy-note">
         Uploads are processed in memory and never stored.{" "}

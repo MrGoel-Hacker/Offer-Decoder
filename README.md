@@ -11,7 +11,8 @@ What you get:
 - **Scanned PDF support** - pages are rendered in memory (pypdfium2) and read by the vision models
 - **Red flags** - bonds, clawbacks, long notice periods, non-competes, probation and vesting gotchas, with what to ask about each
 - **Dark and light themes** - toggle in the header, remembered per browser
-- **Shareable report** - a link you can send someone, valid for 90 days
+- **Report packs** - first 3 saved reports for $5 USD (was $20) or ₹125 INR (was ₹500), 75% off, one-time purchase through Dodo Payments
+- **Shareable report** - save with a report credit, then create a link you can send someone, valid for 90 days
 
 Stack: FastAPI + MongoDB (Motor) backend, React 19 (Create React App + craco, Tailwind, shadcn/ui) frontend. AI letter reading uses free OpenRouter models; everything else is plain code so the app keeps working when the AI limit is hit.
 
@@ -63,6 +64,10 @@ The backend serves `frontend/build` itself; open `http://localhost:8001`.
 
 Never commit a real `.env`; it is gitignored.
 
+## Dodo Payments
+
+See [DODO_SETUP.md](DODO_SETUP.md) for product creation, backend environment variables, verified webhooks, testing, and live-mode setup. Previewing an offer remains free; saving a new report requires a signed-in account and one report credit. The introductory three-report pack is available once per account.
+
 ## How the AI limits work
 
 AI reading (text, PDF text layer and image OCR) goes through OpenRouter **free models only** - no paid fallback - with these guardrails (all in `backend/ai_extract.py`):
@@ -72,7 +77,7 @@ AI reading (text, PDF text layer and image OCR) goes through OpenRouter **free m
 - **24-hour cache:** an identical letter returns the cached result and does not count again.
 - **Fallback chain:** if one free model is rate-limited, times out or returns bad JSON, the next model in the chain is tried.
 - **Graceful degradation:** when the limit is reached or no key is configured, the app tells the user and keeps working - Quick scan (offline regex heuristics, beta - verify the numbers) and manual entry need no AI, and the tax math is pure code.
-- **Saved reports:** 10 new shareable reports per IP per day; each report link expires after 90 days.
+- **Saved reports:** one purchased credit per new save; each saved report expires after 90 days. Viewing or sharing a saved report uses no extra credit.
 
 ## Running the tests
 
