@@ -46,9 +46,11 @@ test.each([["in", "₹125", { ctc: 1800000 }], ["us", "$5", { baseSalary: 120000
   act(() => root.render(<ReportCheckout session={{ country, input }} onReset={jest.fn()} config={{ prices: { IN: { currency: "INR", amount: 12500, original: 50000 }, US: { currency: "USD", amount: 500, original: 2000 } } }} />));
   const button = host.querySelector('[data-testid="pay-unlock-button"]');
   expect(button.textContent).toContain(`Pay ${amount} & unlock report`);
+  expect(host.querySelector("select")).toBeNull();
+  expect(host.textContent).not.toContain(country === "us" ? "₹" : "$5");
   expect(host.textContent).toContain("Downloadable PDF report to keep");
   await act(async () => button.click());
-  expect(http.post).toHaveBeenCalledWith("/payments/checkout", expect.objectContaining({ country, input }), { headers: { authorization: "Bearer test-session" } });
+  expect(http.post).toHaveBeenCalledWith("/payments/checkout", expect.objectContaining({ country, input, billingCountry: country === "us" ? "US" : "IN" }), { headers: { authorization: "Bearer test-session" } });
   expect(button.disabled).toBe(false);
   expect(host.querySelector('[role="alert"]')).not.toBeNull();
 });

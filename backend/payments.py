@@ -150,17 +150,22 @@ def make_router(db, decode_request, clean_input, bump, today, client_ip):
         return {"ok": True}
 
     @router.get("/config")
-    async def config():
+    async def config(country: Literal["in", "us"] | None = None):
         configured = all(os.environ.get(key, "").strip() for key in (
             "DODO_PAYMENTS_API_KEY", "DODO_PRODUCT_IN", "DODO_PRODUCT_US", "APP_PUBLIC_URL",
         ))
-        return {"enabled": enabled(), "configured": configured, "testMode": os.environ.get("DODO_PAYMENTS_ENVIRONMENT", "test_mode") != "live_mode", "prices": PRICES}
+        # Region pages request only their price. Preserve the unscoped response
+        # for older clients that may still be open during a deployment.
+        prices = {country.upper(): PRICES[country.upper()]} if country else PRICES
+        return {"enabled": enabled(), "configured": configured, "testMode": os.environ.get("DODO_PAYMENTS_ENVIRONMENT", "test_mode") != "live_mode", "prices": prices}
 
     @router.post("/checkout")
     async def checkout(body: CheckoutRequest, request: Request):
         user = await auth.require_user(db, request)
         if not enabled():
             raise HTTPException(503, "Payments are not enabled yet.")
+        if body.billingCountry != body.country.upper():
+            raise HTTPException(400, "Your billing country must match the selected report region.")
         public_url = os.environ.get("APP_PUBLIC_URL", "").rstrip("/")
         product_id = os.environ.get(f"DODO_PRODUCT_{body.billingCountry}", "").strip()
         if not public_url.startswith("https://") or not product_id:

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { regionFromPath, regionPath } from "@/lib/region";
 import { LogOut, Moon, Sun, UserRound } from "lucide-react";
 import { setTheme, useTheme } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
@@ -64,6 +65,7 @@ export const LogoMark = ({ size = 28 }) => (
 );
 
 export const Header = () => {
+  const country = regionFromPath(useLocation().pathname);
   const theme = useTheme();
   const toggle = () => setTheme(theme === "light" ? "dark" : "light");
   const { user, ready } = useAuth();
@@ -71,7 +73,7 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] backdrop-blur-xl grain">
       <div className="max-w-3xl mx-auto flex items-center justify-between px-5 py-3.5">
-        <Link to="/" className="flex items-center gap-2.5" data-testid="brand-home-link">
+        <Link to={regionPath(country)} className="flex items-center gap-2.5" data-testid="brand-home-link">
           <LogoMark />
           <span className="font-display text-lg font-extrabold tracking-tight text-[var(--text)]">
             Offer<span className="text-[var(--accent-text)]">Decode</span>
@@ -79,7 +81,7 @@ export const Header = () => {
         </Link>
         <div className="flex items-center gap-2.5">
           <span className="rounded-full border border-[var(--line-2)] px-3 py-1 text-[11px] font-semibold text-[var(--text-dim)]" data-testid="regime-badge">
-            India + US · 2026
+            {country === "us" ? "USA · 2026" : country === "in" ? "India · 2026" : "Offer clarity"}
           </span>
           {ready && (user ? (
             <UserMenu />

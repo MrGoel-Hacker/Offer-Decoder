@@ -124,7 +124,21 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         await self.client.aclose()
 
     async def buy(self, country="IN"):
-        return await self.client.post("/payments/checkout", json={"billingCountry": country, "country": "in", "input": {"ctc": 1800000}})
+        return await self.client.post("/payments/checkout", json={"billingCountry": country, "country": "us" if country == "US" else "in", "input": {"baseSalary": 120000} if country == "US" else {"ctc": 1800000}})
+
+    async def test_region_config_only_returns_selected_price(self):
+        for country, key, amount in (("in", "IN", 12500), ("us", "US", 500)):
+            data = (await self.client.get(f"/payments/config?country={country}")).json()
+            self.assertEqual(list(data["prices"]), [key])
+            self.assertEqual(data["prices"][key]["amount"], amount)
+        self.assertEqual((await self.client.get("/payments/config")).json()["prices"], payments.PRICES)
+        self.assertEqual((await self.client.get("/payments/config?country=gb")).status_code, 422)
+
+    async def test_cross_region_checkout_cannot_switch_price(self):
+        for country, billing, inp in (("us", "IN", {"baseSalary": 120000}), ("in", "US", {"ctc": 1800000})):
+            response = await self.client.post("/payments/checkout", json={"country": country, "billingCountry": billing, "input": inp})
+            self.assertEqual(response.status_code, 400)
+        self.assertFalse(self.orders.docs)
 
     async def test_checkout_preserves_one_offer_and_server_product(self):
         response = await self.buy()

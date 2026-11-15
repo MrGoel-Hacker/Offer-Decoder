@@ -7,7 +7,7 @@ import { AuthModal } from "@/components/AuthModal";
 export function ReportCheckout({ session, onReset, config }) {
   const { user, authHeaders } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const [country, setCountry] = useState(session.country === "us" ? "US" : "IN");
+  const country = session.country === "us" ? "US" : "IN";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recovery] = useState(() => sessionStorage.getItem("offerdecode:lastReport"));
@@ -34,13 +34,8 @@ export function ReportCheckout({ session, onReset, config }) {
     <p className="eyebrow">Your offer is ready to decode</p>
     <h1 className="font-display text-3xl font-extrabold text-[var(--text)]">Unlock your full offer report</h1>
     <p className="text-[var(--text-dim)]">Unlock your in-hand salary, CTC breakdown, tax estimates, red flags and negotiation tips for this offer. No subscription.</p>
-    <p className="text-sm text-[var(--text-dim)]">This report uses {session.country === "us" ? "US salary and tax estimates" : "Indian salary and tax rules"}. Billing country only selects your payment price.</p>
+    <p className="text-sm text-[var(--text-dim)]">{country === "US" ? "USA report · US salary and tax estimates · Billed in USD" : "India report · Indian salary and tax rules · Billed in INR"}</p>
     {config.testMode && <p className="text-amber-300">Test checkout — no real payment. Use test payment details only.</p>}
-    <label className="block text-sm text-[var(--text-dim)]">Billing country
-      <select className="mt-2 block rounded-lg border border-[var(--line-2)] bg-[var(--field-bg)] p-3" value={country} disabled={busy} onChange={(e) => setCountry(e.target.value)}>
-        <option value="IN">India — INR</option><option value="US">United States — USD</option>
-      </select>
-    </label>
     <div className="rounded-2xl border-2 border-emerald-500/50 bg-emerald-500/[0.07] p-6 sm:p-8"><p className="text-[var(--accent-text)] text-sm font-semibold">Launch gift · 75% off</p>
       <p className="mt-2 text-4xl font-bold text-[var(--text)]">{money(price.amount)} <del className="text-lg font-normal text-[var(--text-dim)]">{money(price.original)}</del></p>
       <ul className="my-5 space-y-2 text-sm text-[var(--text)]">

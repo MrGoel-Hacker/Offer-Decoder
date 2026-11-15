@@ -7,26 +7,6 @@ import { ReportView } from "@/components/report/ReportView";
 import { useAuth } from "@/lib/auth";
 import { AuthModal } from "@/components/AuthModal";
 
-const CountryToggle = ({ country, onPick }) => (
-  <div className="mb-5 inline-flex rounded-full border border-[var(--line-2)] bg-[var(--field-bg)] p-1" data-testid="country-toggle" style={{ animationDelay: "80ms" }}>
-    {[
-      { id: "in", label: "India ₹" },
-      { id: "us", label: "USA $" },
-    ].map((c) => (
-      <button
-        key={c.id}
-        type="button"
-        onClick={() => onPick(c.id)}
-        className={`rounded-full px-5 py-2 text-sm font-bold ${country === c.id ? "bg-emerald-500 text-[#04130d]" : "text-[var(--text-dim)] hover:text-[var(--text)]"}`}
-        style={{ transition: "background-color .2s, color .2s" }}
-        data-testid={`country-${c.id}-button`}
-      >
-        {c.label}
-      </button>
-    ))}
-  </div>
-);
-
 const Hero = ({ country }) => (
   <section className="pt-6 sm:pt-9 pb-6">
     <p className="eyebrow fade-up">{country === "us" ? "US offer letters, decoded" : "Indian offer letters, decoded"}</p>
@@ -45,10 +25,10 @@ const Hero = ({ country }) => (
   </section>
 );
 
-const OfferInfo = ({ limits, payments }) => <div>
-    {payments?.enabled && <div className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm text-slate-300">
+const OfferInfo = ({ limits, payments, country }) => <div>
+    {payments?.enabled && <div className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm text-[var(--text-dim)]">
       <p className="font-semibold text-emerald-400">Launch gift · 75% off each full report</p>
-      <p className="mt-1">India: <del>₹500</del> ₹125 · USA: <del>US$20</del> US$5. One-time payment per offer, no subscription. Taxes, if any, appear at checkout.</p>
+      <p className="mt-1">{country === "us" ? <><del>US$20</del> <strong className="text-[var(--text)]">US$5</strong></> : <><del>₹500</del> <strong className="text-[var(--text)]">₹125</strong></>}. One-time payment per offer, no subscription. Taxes, if any, appear at checkout.</p>
       {payments.testMode && <p className="mt-2 text-amber-300">Test payments only — real purchases aren't enabled.</p>}
     </div>}
     {limits && (
@@ -58,7 +38,7 @@ const OfferInfo = ({ limits, payments }) => <div>
     )}
   </div>;
 
-export default function Home() {
+export default function Home({ country = "in" }) {
   const { user, ready } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const pending = useRef(null);
@@ -67,25 +47,19 @@ export default function Home() {
     pending.current = action;
     setShowAuth(true);
   };
-  const [country, setCountry] = useState("in");
   const [manual, setManual] = useState(null); // null | prefill object
   const [session, setSession] = useState(null);
   const [limits, setLimits] = useState(null);
   const [payments, setPayments] = useState(null);
 
   useEffect(() => {
-    http.get("/payments/config").then(({ data }) => setPayments(data)).catch(() => {});
-  }, []);
+    http.get(`/payments/config?country=${country}`).then(({ data }) => setPayments(data)).catch(() => {});
+  }, [country]);
 
   useEffect(() => {
     if (!session) http.get("/limits").then((r) => setLimits(r.data)).catch(() => {});
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [session]);
-
-  const pickCountry = (c) => {
-    setCountry(c);
-    setManual(null);
-  };
 
   const toManual = (p) => setManual(p || {});
   const reset = () => {
@@ -98,10 +72,9 @@ export default function Home() {
   return (
     <main className="max-w-3xl mx-auto px-5" data-testid="landing-page">
       <Hero country={country} />
-      <CountryToggle country={country} onPick={pickCountry} />
       {sessionStorage.getItem("offerdecode:lastReport") && <p className="mb-4 text-sm"><a className="text-[var(--accent-text)] underline" href={`/checkout/${sessionStorage.getItem("offerdecode:lastReport")}`}>Return to your last purchase</a></p>}
       <SmartInput key={country} country={country} onDecoded={setSession} onQuickScan={toManual} authorize={authorize} />
-      <OfferInfo limits={limits} payments={payments} />
+      <OfferInfo limits={limits} payments={payments} country={country} />
       <p className="mt-3 text-center text-[11px] text-[var(--text-faint)] fade-up" style={{ animationDelay: "400ms" }} data-testid="upload-privacy-note">
         Uploads are processed in memory and never stored.{" "}
         <Link to="/privacy" className="text-[var(--text-dim)] underline underline-offset-2 hover:text-[var(--accent-text)]">How your letter is handled</Link>

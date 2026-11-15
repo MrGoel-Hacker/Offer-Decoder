@@ -90,8 +90,8 @@ export const ReportView = (props) => {
   const [error, setError] = useState(false);
   useEffect(() => {
     if (props.readOnly) return;
-    http.get("/payments/config").then(({ data }) => setConfig(data)).catch(() => setError(true));
-  }, [props.readOnly]);
+    http.get(`/payments/config?country=${props.session.country === "us" ? "us" : "in"}`).then(({ data }) => setConfig(data)).catch(() => setError(true));
+  }, [props.readOnly, props.session.country]);
   if (props.readOnly) return <FreeReportView {...props} />;
   if (error) return <p className="py-10 text-slate-300">Couldn't load report access. Please refresh and try again.</p>;
   if (!config) return <p className="py-10 text-slate-400">Preparing your report…</p>;

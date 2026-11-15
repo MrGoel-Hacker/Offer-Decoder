@@ -13,7 +13,7 @@ from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, Uplo
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -431,6 +431,17 @@ if BUILD_DIR.exists():
         candidate = BUILD_DIR / full_path
         if full_path and candidate.is_file():
             return FileResponse(candidate, headers={"Cache-Control": "no-cache"})
+        if full_path.rstrip("/") in ("india", "usa"):
+            region = full_path.rstrip("/")
+            us = region == "usa"
+            title = "OfferDecode USA - take-home pay, taxes and offer reports" if us else "OfferDecode India - in-hand salary, CTC and offer reports"
+            description = "Decode your US job offer: take-home pay, bonus, RSUs, tax estimates and offer flags. Sign in with Google and unlock a downloadable report." if us else "Decode your Indian job offer: monthly in-hand salary, CTC, PF, gratuity, tax estimates and offer flags. Sign in with Google and unlock a downloadable report."
+            html = (BUILD_DIR / "index.html").read_text(encoding="utf-8")
+            html = html.replace("OfferDecode - understand your job offer", title)
+            html = html.replace("Choose your region to decode your job offer, understand take-home salary and unlock your full downloadable report.", description)
+            html = html.replace('href="https://offerdecoder.online/"', f'href="https://offerdecoder.online/{region}"')
+            html = html.replace('content="https://offerdecoder.online/"', f'content="https://offerdecoder.online/{region}"')
+            return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
         # Revalidate the app shell after deployments; hashed /static assets
         # can keep their normal caching without stranding an older client.
         return FileResponse(BUILD_DIR / "index.html", headers={"Cache-Control": "no-cache"})
