@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="referrer" content="no-referrer" />
         <meta name="theme-color" content="#090D16" />
         <meta name="description" content="Decode Indian job offer letters into real monthly in-hand salary, CTC breakdown, red flags and negotiation tips." />
         <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="any" />
@@ -38,13 +39,20 @@
         <!-- Microsoft Clarity -->
         <script type="text/javascript">
             (function(c,l,a,r,i,t,y){
+                if (l.location.pathname.startsWith("/checkout/")) return;
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
                 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
             })(window, document, "clarity", "script", "z125uf83ff");
         </script>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
-        <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
+        <script>
+            if (!window.location.pathname.startsWith("/checkout/")) {
+                var emergentScript = document.createElement("script");
+                emergentScript.src = "https://assets.emergent.sh/scripts/emergent-main.js";
+                document.head.appendChild(emergentScript);
+            }
+        </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -121,7 +129,7 @@
                     }),
                     (e.__SV = 1));
             })(document, window.posthog || []);
-            posthog.init("phc_DbsPb39SRc8z3EiQ6Dhj6ikv4H4rTKcht9d4sZSesceP", {
+            if (!window.location.pathname.startsWith("/checkout/")) posthog.init("phc_DbsPb39SRc8z3EiQ6Dhj6ikv4H4rTKcht9d4sZSesceP", {
                 api_host: "https://ap.emergent.sh",
                 person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well,
                 session_recording: {

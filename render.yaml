@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r backend/requirements.txt && cd frontend && yarn install --frozen-lockfile && yarn build
-    startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT
+    startCommand: cd backend && uvicorn server:app --host 0.0.0.0 --port $PORT --no-access-log
     envVars:
       - key: GENERATE_SOURCEMAP
         value: "false"
@@ -17,4 +17,17 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: APP_PUBLIC_URL
+        sync: false
+      - key: DODO_PAYMENTS_ENABLED
+        value: "false"
+      # CRA 5's bundled lint plugin is incompatible with this repo's ESLint 9.
+      - key: DISABLE_ESLINT_PLUGIN
+        value: "true"
+      - key: DODO_PAYMENTS_ENVIRONMENT
+        value: test_mode
+      - key: DODO_PAYMENTS_API_KEY
+        sync: false
+      - key: DODO_PRODUCT_IN
+        sync: false
+      - key: DODO_PRODUCT_US
         sync: false

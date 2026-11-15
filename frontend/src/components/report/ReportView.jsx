@@ -9,6 +9,7 @@ import { Assumptions } from "@/components/report/Assumptions";
 import { Flags } from "@/components/report/Flags";
 import { Tips } from "@/components/report/Tips";
 import { ShareBar } from "@/components/report/ShareBar";
+import { ReportCheckout } from "@/components/ReportCheckout";
 
 const SOURCE = { ai: "Read by AI", quickscan: "Quick scan · Beta", manual: "Manual entry" };
 
@@ -29,7 +30,7 @@ const ReportTop = ({ session, onReset, readOnly, expiresAt }) => (
   </div>
 );
 
-export const ReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
+const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
   const [input, setInput] = useState(session.input);
   const [result, setResult] = useState(stored || null);
   const [syncing, setSyncing] = useState(false);
@@ -70,4 +71,17 @@ export const ReportView = ({ session, onReset, readOnly, stored, expiresAt }) =>
       )}
     </div>
   );
+};
+
+export const ReportView = (props) => {
+  const [config, setConfig] = useState(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    if (props.readOnly) return;
+    http.get("/payments/config").then(({ data }) => setConfig(data)).catch(() => setError(true));
+  }, [props.readOnly]);
+  if (props.readOnly) return <FreeReportView {...props} />;
+  if (error) return <p className="py-10 text-slate-300">Couldn't load report access. Please refresh and try again.</p>;
+  if (!config) return <p className="py-10 text-slate-400">Preparing your report…</p>;
+  return config.enabled ? <ReportCheckout session={props.session} onReset={props.onReset} config={config} /> : <FreeReportView {...props} />;
 };

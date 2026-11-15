@@ -16,7 +16,7 @@ export default function Privacy() {
       </h1>
       <p className="fade-up mt-4 max-w-xl text-sm text-[var(--text-dim)]" style={{ animationDelay: "60ms" }}>
         Decoding an offer needs no account. Sign-in with Google is only needed when you save a report. This page explains, in plain terms,
-        what is processed when you use it. Last updated: October 2026.
+        what is processed when you use it. Last updated: November 2026.
       </p>
 
       <div className="mt-8 space-y-4">
@@ -92,6 +92,12 @@ export default function Privacy() {
             <a href="https://privacy.microsoft.com/en-us/privacystatement" target="_blank" rel="noreferrer" className="text-[var(--accent-text)] hover:text-[var(--accent-text)] underline underline-offset-2">Microsoft's privacy statement</a>.
             It is not used to identify you, and no offer letter content is sent to Clarity by us.
           </p>
+        </Section>
+
+        <Section title="Report purchases and Dodo Payments">
+          <p>When paid reports are enabled, starting checkout saves the salary inputs, clause flags, notes, company, role and calculated result for that one report for up to 90 days, even if checkout is not completed. Uploaded PDF and image files are not saved.</p>
+          <p>Dodo Payments processes checkout and payment details. OfferDecode receives payment status and identifiers, not your full card details. We verify payment on the server before showing the purchased report. Payment providers may retain transaction records under their own policies.</p>
+          <p>Purchased reports use a separate private purchase link. Anyone with that link can view it; keep it safe and bookmark it. It is not automatically added to My reports. Checkout and purchased-report pages do not load our analytics scripts.</p>
         </Section>
 
         <Section title="Rate limiting">

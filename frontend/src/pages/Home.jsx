@@ -25,7 +25,7 @@ const CountryToggle = ({ country, onPick }) => (
   </div>
 );
 
-const Hero = ({ limits, country }) => (
+const Hero = ({ limits, country, payments }) => (
   <section className="pt-8 sm:pt-14 pb-8">
     <p className="eyebrow fade-up">{country === "us" ? "US offer letters, decoded" : "Indian offer letters, decoded"}</p>
     <h1 className="fade-up mt-4 font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.02] tracking-tight text-[var(--text)]" style={{ animationDelay: "60ms" }} data-testid="landing-hero-title">
@@ -40,6 +40,11 @@ const Hero = ({ limits, country }) => (
         ? "Drop in your offer and get the real monthly take-home, a full comp breakdown, red flags and what to negotiate - with 2026 federal and FICA math plus state estimates. Not tax advice."
         : "Drop in your offer and get the real monthly in-hand, a full CTC breakdown, red flags and what to negotiate - with tax math done to the rupee for FY 2026-27."}
     </p>
+    {payments?.enabled && <div className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm text-slate-300">
+      <p className="font-semibold text-emerald-400">Launch gift · 75% off each full report</p>
+      <p className="mt-1">India: <del>₹500</del> ₹125 · USA: <del>US$20</del> US$5. One-time payment per offer, no subscription. Taxes, if any, appear at checkout.</p>
+      {payments.testMode && <p className="mt-2 text-amber-300">Test payments only — real purchases aren't enabled.</p>}
+    </div>}
     {limits && (
       <p className="mt-4 text-xs text-[var(--text-faint)]" data-testid="ai-limits-info">
         {limits.aiConfigured && limits.globalAvailable ? `AI reads left for you today: ${limits.ipRemaining} of 5. Quick scan and manual entry are unlimited.` : `AI reading is paused right now - Quick scan and manual entry work as usual.`}
@@ -53,6 +58,11 @@ export default function Home() {
   const [manual, setManual] = useState(null); // null | prefill object
   const [session, setSession] = useState(null);
   const [limits, setLimits] = useState(null);
+  const [payments, setPayments] = useState(null);
+
+  useEffect(() => {
+    http.get("/payments/config").then(({ data }) => setPayments(data)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!session) http.get("/limits").then((r) => setLimits(r.data)).catch(() => {});
@@ -74,7 +84,7 @@ export default function Home() {
 
   return (
     <main className="max-w-3xl mx-auto px-5" data-testid="landing-page">
-      <Hero limits={limits} country={country} />
+      <Hero limits={limits} country={country} payments={payments} />
       <CountryToggle country={country} onPick={pickCountry} />
       <SmartInput key={country} country={country} onDecoded={setSession} onQuickScan={toManual} />
       <p className="mt-3 text-center text-[11px] text-[var(--text-faint)] fade-up" style={{ animationDelay: "400ms" }} data-testid="upload-privacy-note">

@@ -25,6 +25,7 @@ from us_decoder import INPUT_KEYS_US, decode_us  # noqa: E402
 from us_states import STATES  # noqa: E402
 from flag_guide import enrich  # noqa: E402
 from quickscan import clause_flags, quick_scan, quick_scan_us, us_clause_flags  # noqa: E402
+import payments  # noqa: E402
 
 client = AsyncIOMotorClient(os.environ["MONGO_URL"])
 db = client[os.environ["DB_NAME"]]
@@ -185,6 +186,8 @@ async def limits(request: Request):
 
 @api.post("/decode")
 async def decode_offer(req: DecodeRequest):
+    if payments.enabled():
+        raise HTTPException(402, "Purchase a report to view the full breakdown.")
     return run_decode(req)
 
 
@@ -253,6 +256,8 @@ async def extract_images(request: Request, files: List[UploadFile] = File(...), 
 
 @api.post("/reports")
 async def create_report(req: ReportCreate, request: Request):
+    if payments.enabled():
+        raise HTTPException(402, "Paid reports are available through your private purchase link.")
     user = await auth.require_user(db, request)
     country = norm_country(req.country)
     if country == "us":
@@ -369,7 +374,17 @@ async def delete_my_report(rid: str, request: Request):
     return {"ok": True}
 
 
+api.include_router(payments.make_router(db, run_decode, clean_input, ai_extract.bump, ai_extract.today, client_ip))
 app.include_router(api)
+
+
+@app.middleware("http")
+async def payment_privacy(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if request.url.path.startswith(("/api/payments", "/checkout/")):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 app.add_middleware(
     CORSMiddleware, allow_credentials=False,
     allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "https://offerdecoder.online").split(",") if o.strip()], allow_methods=["*"], allow_headers=["*"],
@@ -378,6 +393,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def indexes():
+    await db.payment_orders.create_index("expiresAt", expireAfterSeconds=0)
     await db.ai_cache.create_index("createdAt", expireAfterSeconds=ai_extract.CACHE_TTL_SECONDS)
     await db.reports.create_index("expiresAt", expireAfterSeconds=0)
     await db.reports.create_index("ownerUserId")
