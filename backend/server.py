@@ -434,10 +434,10 @@ if BUILD_DIR.exists():
         if full_path.rstrip("/") in ("india", "usa"):
             region = full_path.rstrip("/")
             us = region == "usa"
-            title = "OfferDecode USA - take-home pay, taxes and offer reports" if us else "OfferDecode India - in-hand salary, CTC and offer reports"
+            title = "OfferDecoder USA - take-home pay, taxes and offer reports" if us else "OfferDecoder India - in-hand salary, CTC and offer reports"
             description = "Decode your US job offer: take-home pay, bonus, RSUs, tax estimates and offer flags. Sign in with Google and unlock a downloadable report." if us else "Decode your Indian job offer: monthly in-hand salary, CTC, PF, gratuity, tax estimates and offer flags. Sign in with Google and unlock a downloadable report."
             html = (BUILD_DIR / "index.html").read_text(encoding="utf-8")
-            html = html.replace("OfferDecode - understand your job offer", title)
+            html = html.replace("OfferDecoder - understand your job offer", title)
             html = html.replace("Choose your region to decode your job offer, understand take-home salary and unlock your full downloadable report.", description)
             html = html.replace('href="https://offerdecoder.online/"', f'href="https://offerdecoder.online/{region}"')
             html = html.replace('content="https://offerdecoder.online/"', f'content="https://offerdecoder.online/{region}"')

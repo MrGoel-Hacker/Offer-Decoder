@@ -6,7 +6,7 @@ export function RegionMetadata() {
   const { pathname } = useLocation();
   useEffect(() => {
     const country = regionFromPath(pathname);
-    const title = country === "us" ? "OfferDecode USA - take-home pay, taxes and offer reports" : country === "in" ? "OfferDecode India - in-hand salary, CTC and offer reports" : "OfferDecode - understand your job offer";
+    const title = country === "us" ? "OfferDecoder USA - take-home pay, taxes and offer reports" : country === "in" ? "OfferDecoder India - in-hand salary, CTC and offer reports" : "OfferDecoder - understand your job offer";
     const description = country === "us" ? "Decode your US job offer: take-home pay, bonus, RSUs, tax estimates and offer flags. Sign in with Google and unlock a downloadable report." : country === "in" ? "Decode your Indian job offer: monthly in-hand salary, CTC, PF, gratuity, tax estimates and offer flags. Sign in with Google and unlock a downloadable report." : "Choose your region to decode your job offer, understand take-home salary and unlock your full downloadable report.";
     document.title = title;
     for (const [selector, content] of [['meta[name="description"]', description], ['meta[property="og:title"]', title], ['meta[property="og:description"]', description], ['meta[property="og:url"]', `${window.location.origin}${pathname}`]]) {

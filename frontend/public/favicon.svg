@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="#090D16" stroke="#10B981" stroke-width="3"/>
-  <text x="32" y="44" font-family="system-ui, 'Segoe UI', Arial, sans-serif" font-size="36" font-weight="700" fill="#10B981" text-anchor="middle">₹</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect x="1" y="1" width="30" height="30" rx="9" fill="#0f1522" stroke="#10B981" stroke-width="1.5"/>
+  <path d="M9 11h14M9 16h9M9 21h5" stroke="#334155" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M17 21.5l2.6 2.6L25 18" stroke="#10B981" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

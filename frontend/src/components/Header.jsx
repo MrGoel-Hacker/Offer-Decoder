@@ -76,7 +76,7 @@ export const Header = () => {
         <Link to={regionPath(country)} className="flex items-center gap-2.5" data-testid="brand-home-link">
           <LogoMark />
           <span className="font-display text-lg font-extrabold tracking-tight text-[var(--text)]">
-            Offer<span className="text-[var(--accent-text)]">Decode</span>
+            Offer<span className="text-[var(--accent-text)]">Decoder</span>
           </span>
         </Link>
         <div className="flex items-center gap-2.5">
