@@ -32,7 +32,7 @@ def _mongo_conf():
     return url, name
 
 
-def make_session():
+def make_session(credits=3):
     """Insert a test user + session straight into Mongo; returns (auth_header_dict, mongo_db, sub)."""
     url, name = _mongo_conf()
     if not url or not name:
@@ -41,7 +41,7 @@ def make_session():
     db = pymongo.MongoClient(url, serverSelectionTimeoutMS=5000)[name]
     sub = "TEST_sub_" + uuid.uuid4().hex[:12]
     token = "TEST_tok_" + secrets.token_urlsafe(24)
-    db.users.insert_one({"_id": sub, "email": "test@example.com", "name": "TEST User", "createdAt": datetime.now(timezone.utc)})
+    db.users.insert_one({"_id": sub, "email": "test@example.com", "name": "TEST User", "reportCredits": credits, "createdAt": datetime.now(timezone.utc)})
     db.sessions.insert_one({"_id": token, "userId": sub, "createdAt": datetime.now(timezone.utc),
                             "expiresAt": datetime.now(timezone.utc) + timedelta(days=1)})
     return {"authorization": f"Bearer {token}"}, db, sub
@@ -198,14 +198,14 @@ def test_extract_images_too_many():
 # --- reports (saving requires sign-in; new saves are owner-only until explicitly shared;
 #     reports saved before accounts existed stay public-by-link until they expire)
 def test_report_requires_auth():
-    r = requests.post(f"{API}/reports", json={"input": {"ctc": 1800000}, "company": "TEST_NoAuth"}, headers={"x-forwarded-for": ip()})
+    r = requests.post(f"{API}/reports", json={"input": {"ctc": 1800000}, "company": "TEST_NoAuth", "requestId": str(uuid.uuid4())}, headers={"x-forwarded-for": ip()})
     assert r.status_code == 401
 
 
 def test_report_private_by_default_then_share():
     ah, db, sub = make_session()
     h = {"x-forwarded-for": ip(), **ah}
-    r = requests.post(f"{API}/reports", json={"input": {"ctc": 1800000}, "notes": "bond", "company": "TEST_Acme", "role": "SDE"}, headers=h)
+    r = requests.post(f"{API}/reports", json={"input": {"ctc": 1800000}, "notes": "bond", "company": "TEST_Acme", "role": "SDE", "requestId": str(uuid.uuid4())}, headers=h)
     assert r.status_code == 200, r.text
     rid = r.json()["id"]
     assert len(rid) >= 30 and r.json()["expiresAt"]
@@ -258,13 +258,12 @@ def test_my_reports_requires_auth_and_owner_scoping():
 
 def test_report_missing_ctc():
     ah, db, sub = make_session()
-    r = requests.post(f"{API}/reports", json={"input": {}}, headers={"x-forwarded-for": ip(), **ah})
+    r = requests.post(f"{API}/reports", json={"input": {}, "requestId": str(uuid.uuid4())}, headers={"x-forwarded-for": ip(), **ah})
     assert r.status_code == 400
 
 
-def test_report_rate_limit():
+def test_report_credit_limit():
     ah, db, sub = make_session()
     h = {"x-forwarded-for": ip(), **ah}
-    codes = [requests.post(f"{API}/reports", json={"input": {"ctc": 1000000}, "company": "TEST_rl"}, headers=h).status_code for _ in range(11)]
-    assert codes[:10] == [200] * 10, codes
-    assert codes[10] == 429
+    codes = [requests.post(f"{API}/reports", json={"input": {"ctc": 1000000}, "company": "TEST_credits", "requestId": str(uuid.uuid4())}, headers=h).status_code for _ in range(4)]
+    assert codes == [200, 200, 200, 402], codes

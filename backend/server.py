@@ -7,6 +7,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -19,6 +20,7 @@ load_dotenv(ROOT_DIR / ".env")
 
 import ai_extract  # noqa: E402
 import auth  # noqa: E402
+import billing  # noqa: E402
 import pdf_scan  # noqa: E402
 from decoder import decode  # noqa: E402
 from us_decoder import INPUT_KEYS_US, decode_us  # noqa: E402
@@ -34,8 +36,7 @@ api = APIRouter(prefix="/api")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # never log request headers/keys
 
-# ---- RATE LIMIT: shareable report creation ----
-REPORTS_PER_IP_PER_DAY = 10
+# ---- Saved report retention ----
 REPORT_TTL_DAYS = 90
 MAX_TEXT = 20000
 MAX_PDF_BYTES = 10 * 1024 * 1024
@@ -83,6 +84,7 @@ class ReportCreate(DecodeRequest):
     company: str = ""
     role: str = ""
     source: str = "manual"
+    requestId: UUID
 
 
 class TextRequest(BaseModel):
@@ -260,15 +262,18 @@ async def create_report(req: ReportCreate, request: Request):
             raise HTTPException(400, "A base salary is needed to save a report.")
     elif not req.input.get("ctc"):
         raise HTTPException(400, "A CTC is needed to save a report.")
-    if not await ai_extract.bump(db, f"report:{ai_extract.today()}:{client_ip(request)}", REPORTS_PER_IP_PER_DAY):
-        raise HTTPException(429, "You've saved 10 reports today - try again tomorrow.")
-    now = datetime.now(timezone.utc)
-    doc = ReportDoc(
-        _id=secrets.token_urlsafe(24), input=clean_input(req.input, country), clauseFlags=req.clauseFlags[:12],
-        notes=req.notes[:5000], company=req.company[:120], role=req.role[:120], source=req.source[:20], country=country,
-        result=run_decode(req), ownerUserId=user["_id"], createdAt=now, expiresAt=now + timedelta(days=REPORT_TTL_DAYS),
+    # Compute before debiting. Repeated requests with the same UUID recover a
+    # failed insert without spending another credit.
+    result = run_decode(req)
+    rid, now = await billing.reserve_report(
+        db, user["_id"], str(req.requestId), req.model_dump(mode="json", exclude={"requestId"}),
     )
-    await db.reports.insert_one(doc.to_mongo())
+    doc = ReportDoc(
+        _id=rid, input=clean_input(req.input, country), clauseFlags=req.clauseFlags[:12],
+        notes=req.notes[:5000], company=req.company[:120], role=req.role[:120], source=req.source[:20], country=country,
+        result=result, ownerUserId=user["_id"], createdAt=now, expiresAt=now + timedelta(days=REPORT_TTL_DAYS),
+    )
+    await db.reports.update_one({"_id": rid}, {"$setOnInsert": doc.to_mongo()}, upsert=True)
     return {"id": doc.id, "expiresAt": doc.expiresAt.isoformat()}
 
 
@@ -363,6 +368,9 @@ async def my_reports(request: Request):
 @api.delete("/my/reports/{rid}")
 async def delete_my_report(rid: str, request: Request):
     user = await auth.require_user(db, request)
+    if not await db.reports.find_one({"_id": rid, "ownerUserId": user["_id"]}):
+        raise HTTPException(404, "Report not found.")
+    await db.users.update_one({"_id": user["_id"]}, {"$addToSet": {"billingDeletedReports": rid}})
     res = await db.reports.delete_one({"_id": rid, "ownerUserId": user["_id"]})
     if res.deleted_count == 0:
         raise HTTPException(404, "Report not found.")
@@ -370,6 +378,7 @@ async def delete_my_report(rid: str, request: Request):
 
 
 app.include_router(api)
+app.include_router(billing.router(db))
 app.add_middleware(
     CORSMiddleware, allow_credentials=False,
     allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "https://offerdecoder.online").split(",") if o.strip()], allow_methods=["*"], allow_headers=["*"],
