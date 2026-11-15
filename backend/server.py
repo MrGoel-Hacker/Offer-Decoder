@@ -420,5 +420,7 @@ if BUILD_DIR.exists():
     async def spa(full_path: str):
         candidate = BUILD_DIR / full_path
         if full_path and candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(BUILD_DIR / "index.html")
+            return FileResponse(candidate, headers={"Cache-Control": "no-cache"})
+        # Revalidate the app shell after deployments; hashed /static assets
+        # can keep their normal caching without stranding an older client.
+        return FileResponse(BUILD_DIR / "index.html", headers={"Cache-Control": "no-cache"})

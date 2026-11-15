@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { RotateCcw } from "lucide-react";
-import { http, toPayload } from "@/lib/api";
+import { http, toPayload, errMsg } from "@/lib/api";
 import { Headline } from "@/components/report/Headline";
 import { Breakdown } from "@/components/report/Breakdown";
 import { TaxPanel } from "@/components/report/TaxPanel";
@@ -34,21 +34,27 @@ const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
   const [input, setInput] = useState(session.input);
   const [result, setResult] = useState(stored || null);
   const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState("");
   const seq = useRef(0);
 
   useEffect(() => {
     if (readOnly) return;
     const my = ++seq.current;
     setSyncing(true);
+    setError("");
     const t = setTimeout(async () => {
       try {
         const { data } = await http.post("/decode", { input: toPayload(input), clauseFlags: session.clauseFlags || [], notes: session.notes || "", country: session.country || "in" });
         if (my === seq.current) setResult(data);
+      } catch (e) {
+        if (my === seq.current) setError(e?.response?.status === 402
+          ? "Report access has changed. Refresh this page to continue to checkout."
+          : errMsg(e, "Couldn't calculate your report. Please try again."));
       } finally {
         if (my === seq.current) setSyncing(false);
       }
     }, 250);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); ++seq.current; };
   }, [input, readOnly, session.clauseFlags, session.notes, session.country]);
 
   const set = (k, v) => setInput((s) => ({ ...s, [k]: v }));
@@ -56,9 +62,13 @@ const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
   return (
     <div className="pb-6" data-testid="report-view">
       <ReportTop session={session} onReset={onReset} readOnly={readOnly} expiresAt={expiresAt} />
-      {!result ? (
+      {error && <div role="alert" className="mt-8 space-y-3 text-[var(--text)]">
+        <p>{error}</p>
+        <button className="btn-ghost" onClick={() => window.location.reload()}>Refresh page</button>
+      </div>}
+      {!result && !error ? (
         <p className="mt-10 text-sm text-[var(--text)]0" data-testid="report-loading">Crunching the numbers…</p>
-      ) : (
+      ) : result ? (
         <div className={`mt-8 space-y-6 ${syncing ? "opacity-90" : ""}`} style={{ transition: "opacity .2s" }}>
           <Headline r={result} />
           <Breakdown r={result} />
@@ -68,7 +78,7 @@ const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
           <Tips tips={result.tips} />
           {!readOnly && <ShareBar session={session} input={input} />}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
