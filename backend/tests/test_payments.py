@@ -270,8 +270,8 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         from io import BytesIO
         from pypdf import PdfReader
         contents = "\n".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
-        self.assertIn("Fixed in-hand per month", contents)
-        self.assertIn("Negotiation tips", contents)
+        self.assertIn("Your offer, at a glance.", contents)
+        self.assertIn("Negotiation priorities", contents)
         self.assertIn("attachment", pdf.headers["content-disposition"])
         with patch.object(payments.auth, "get_session_user", AsyncMock(return_value={"_id": "other-buyer"})):
             self.assertEqual((await self.client.get(f"/payments/reports/{rid}")).status_code, 404)

@@ -417,6 +417,15 @@ async def indexes():
     async with await client.start_session() as session:
         await session.with_transaction(transaction_probe)
     logging.getLogger("server").info("First-free-report transaction check passed")
+    # Exercise both PDF variants on the deployment host, without storing a
+    # report or calling AI/payments. Missing fonts or render failures stop rollout.
+    from starlette.concurrency import run_in_threadpool
+    for report_country, sample_input in (("in", {"ctc": 1800000}), ("us", {"baseSalary": 120000})):
+        sample_result = run_decode(DecodeRequest(input=sample_input, country=report_country))
+        sample_pdf = await run_in_threadpool(payments.render_report, {"country": report_country, "input": sample_input}, sample_result, datetime.now(timezone.utc))
+        if not sample_pdf.startswith(b"%PDF-"):
+            raise RuntimeError("Decision-report PDF render check failed")
+        logging.getLogger("server").info("Decision-report PDF render check passed: %s (%s bytes)", report_country, len(sample_pdf))
 
 
 @app.on_event("shutdown")

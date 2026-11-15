@@ -11,7 +11,7 @@ export async function downloadReport(path, headers) {
     const url = URL.createObjectURL(data);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "OfferDecode-Report.pdf";
+    link.download = "OfferDecoder-Report.pdf";
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -210,7 +210,7 @@ def make_router(db, decode_request, clean_input, bump, today, client_ip):
     async def saved_pdf(rid: str, request: Request):
         doc = await accessible_report(rid, request)
         return Response(render_report(doc["payload"], doc["result"], doc["createdAt"]), media_type="application/pdf",
-                        headers={"Content-Disposition": 'attachment; filename="OfferDecode-Report.pdf"'})
+                        headers={"Content-Disposition": 'attachment; filename="OfferDecoder-Report.pdf"'})
 
     @router.post("/reports/{rid}/share")
     async def share_report(rid: str, request: Request):
@@ -312,6 +312,6 @@ def make_router(db, decode_request, clean_input, bump, today, client_ip):
         if await verify(doc, request) != "paid":
             raise HTTPException(403, "Payment must be verified before downloading.")
         return Response(render_report(doc["payload"], doc["result"], doc["createdAt"]), media_type="application/pdf",
-                        headers={"Content-Disposition": 'attachment; filename="OfferDecode-Report.pdf"'})
+                        headers={"Content-Disposition": 'attachment; filename="OfferDecoder-Report.pdf"'})
 
     return router
