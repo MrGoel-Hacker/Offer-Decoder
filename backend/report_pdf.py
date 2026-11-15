@@ -29,7 +29,7 @@ def render_report(session, result, created_at):
         return Paragraph(text(value), styles[style])
     def money(value):
         return f"{currency} {float(value or 0):,.0f}"
-    story = [p("OFFERDECODE / PURCHASED REPORT", "Label"), p("Your offer, decoded", "Heading1"),
+    story = [p("OFFERDECODER / FULL OFFER REPORT", "Label"), p("Your offer, decoded", "Heading1"),
              p(" / ".join(filter(None, [session.get("role"), session.get("company")])) or "Offer report"),
              p(f"{'United States' if us else 'India'} | Prepared {created_at.strftime('%d %b %Y')} | Amounts in {currency}", "Label"),
              Spacer(1, 10), p("Base salary take-home per month" if us else "Fixed in-hand per month", "Label"),

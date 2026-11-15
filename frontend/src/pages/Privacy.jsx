@@ -72,6 +72,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="Saved reports are private; share links are your choice">
+          <p>Each Google account can unlock one full report free across all regions, including PDF download and sharing. We retain a used-allowance marker with your account so deleting or expiring that report does not reset the offer. Failed calculations and failed report saves do not consume it. Later reports use the displayed regional price.</p>
           <p>
             Saving a report to My reports requires sign-in. Separately, starting a paid checkout saves a purchase snapshot as described below. An account-saved report stores the numbers you
             entered, any clause flags and notes, and the company and role, in a MongoDB Atlas database, linked to your account.

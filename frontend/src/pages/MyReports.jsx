@@ -66,7 +66,7 @@ const MyReports = () => {
     <main className="max-w-3xl mx-auto px-5 py-10">
       <p className="eyebrow">Your account</p>
       <h1 className="font-display text-3xl font-extrabold text-[var(--text)]">My reports</h1>
-      <p className="mt-2 text-sm text-[var(--text-dim)]">Purchased reports are saved here after payment verification. Download the full PDF or create a share link. Reports are private until shared and expire after 90 days.</p>
+      <p className="mt-2 text-sm text-[var(--text-dim)]">Your free report and verified purchases are saved here. Download the full PDF or create a share link. Reports are private until shared and expire after 90 days.</p>
 
       {items === null ? (
         <p className="mt-8 text-sm text-[var(--text-dim)]">Loading…</p>
@@ -83,7 +83,7 @@ const MyReports = () => {
                 <FileText size={18} className="shrink-0 text-[var(--accent-text)]" />
                 <span className="min-w-0">
                   <span className="block truncate font-semibold text-[var(--text)]">{r.company || "Untitled offer"}{r.role ? ` · ${r.role}` : ""}</span>
-                  <span className="block text-xs text-[var(--text-dim)]">Saved {fmt(r.createdAt)} · expires {fmt(r.expiresAt)}{r.shared ? " · link shared" : " · private"}</span>
+                  <span className="block text-xs text-[var(--text-dim)]">{r.freeReport ? "Free report · " : ""}Saved {fmt(r.createdAt)} · expires {fmt(r.expiresAt)}{r.shared ? " · link shared" : " · private"}</span>
                 </span>
               </Link>
               {r.paid && <button className="btn-ghost !px-3 !py-2 !text-xs" disabled={downloading === r.id} onClick={async () => {

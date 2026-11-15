@@ -86,12 +86,18 @@ const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
 };
 
 export const ReportView = (props) => {
+  const { user, authHeaders } = useAuth();
   const [config, setConfig] = useState(null);
   const [error, setError] = useState(false);
   useEffect(() => {
     if (props.readOnly) return;
-    http.get(`/payments/config?country=${props.session.country === "us" ? "us" : "in"}`).then(({ data }) => setConfig(data)).catch(() => setError(true));
-  }, [props.readOnly, props.session.country]);
+    let stopped = false;
+    setConfig(null); setError(false);
+    Promise.all([http.get(`/payments/config?country=${props.session.country === "us" ? "us" : "in"}`), http.get("/payments/access", { headers: authHeaders() })])
+      .then(([configResponse, accessResponse]) => { if (!stopped) setConfig({ ...configResponse.data, ...accessResponse.data }); })
+      .catch(() => { if (!stopped) setError(true); });
+    return () => { stopped = true; };
+  }, [props.readOnly, props.session.country, authHeaders, user]);
   if (props.readOnly) return <FreeReportView {...props} />;
   if (error) return <p className="py-10 text-slate-300">Couldn't load report access. Please refresh and try again.</p>;
   if (!config) return <p className="py-10 text-slate-400">Preparing your report…</p>;

@@ -61,3 +61,27 @@ test("a shared-link visitor can download but cannot create new share permissions
   expect(host.textContent).not.toContain("Create & copy share link");
   expect(http.post).not.toHaveBeenCalled();
 });
+
+test.each(["in", "us"])("%s first report bypasses payment checkout", async (country) => {
+  http.post.mockRejectedValue(new Error("offline test"));
+  act(() => root.render(<ReportCheckout session={{ country, input: country === "us" ? { baseSalary: 120000 } : { ctc: 1800000 } }} onReset={jest.fn()} config={{ freeReportAvailable: true, prices: { IN: { currency: "INR", amount: 12500, original: 50000 }, US: { currency: "USD", amount: 500, original: 2000 } } }} />));
+  const button = host.querySelector('[data-testid="pay-unlock-button"]');
+  expect(button.textContent).toContain("Unlock my free report");
+  expect(host.textContent).toContain("No card or payment required");
+  await act(async () => button.click());
+  expect(http.post.mock.calls[0][0]).toBe("/payments/free-report");
+  expect(http.post.mock.calls[0][1].country).toBe(country);
+  expect(http.post.mock.calls[0][2].headers.authorization).toBe("Bearer test-session");
+  expect(button.disabled).toBe(false);
+  expect(button.textContent).toContain("Unlock my free report");
+});
+
+test("a stale free allowance switches to paid checkout only after a server conflict", async () => {
+  http.post.mockRejectedValue({ response: { status: 409 } });
+  act(() => root.render(<ReportCheckout session={{ country: "in", input: { ctc: 1800000 } }} onReset={jest.fn()} config={{ freeReportAvailable: true, prices: { IN: { currency: "INR", amount: 12500, original: 50000 } } }} />));
+  const button = host.querySelector('[data-testid="pay-unlock-button"]');
+  await act(async () => button.click());
+  expect(http.post.mock.calls[0][0]).toBe("/payments/free-report");
+  expect(button.textContent).toContain("Pay ₹125 & unlock report");
+  expect(http.post).toHaveBeenCalledTimes(1); // No automatic charge or checkout.
+});

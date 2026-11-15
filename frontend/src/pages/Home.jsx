@@ -22,13 +22,14 @@ const Hero = ({ country }) => (
         ? "Upload your offer for take-home pay, taxes, equity, red flags and negotiation tips."
         : "Upload your offer for monthly in-hand salary, a CTC breakdown, red flags and negotiation tips."}
     </p>
+    <p className="mt-3 text-sm font-semibold text-[var(--accent-text)]" data-testid="first-report-offer">Your first full report is free. Sign in with Google. No card required.</p>
   </section>
 );
 
 const OfferInfo = ({ limits, payments, country }) => <div>
     {payments?.enabled && <div className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm text-[var(--text-dim)]">
       <p className="font-semibold text-emerald-400">Launch gift · 75% off each full report</p>
-      <p className="mt-1">{country === "us" ? <><del>US$20</del> <strong className="text-[var(--text)]">US$5</strong></> : <><del>₹500</del> <strong className="text-[var(--text)]">₹125</strong></>}. One-time payment per offer, no subscription. Taxes, if any, appear at checkout.</p>
+      <p className="mt-1">After your free report: {country === "us" ? <><del>US$20</del> <strong className="text-[var(--text)]">US$5</strong></> : <><del>₹500</del> <strong className="text-[var(--text)]">₹125</strong></>} each. One-time payment per offer, no subscription. Taxes, if any, appear at checkout.</p>
       {payments.testMode && <p className="mt-2 text-amber-300">Test payments only — real purchases aren't enabled.</p>}
     </div>}
     {limits && (

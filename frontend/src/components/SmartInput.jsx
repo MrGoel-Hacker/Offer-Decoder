@@ -166,7 +166,7 @@ export const SmartInput = ({ country, onDecoded, onQuickScan, authorize }) => {
         {!hasFiles && !pasteOpen && <button type="button" className="btn-ghost" onClick={() => setPasteOpen(true)}>Paste offer text</button>}
         <button type="button" className="btn-ghost" onClick={() => authorize(() => onQuickScan({}))} data-testid="manual-entry-button">Enter numbers manually</button>
       </div>
-      <p className="mt-3 text-xs text-[var(--text-faint)]">Sign in with Google before decoding. Review your offer, then pay once to unlock the full report and downloadable PDF.</p>
+      <p className="mt-3 text-xs text-[var(--text-faint)]">Sign in with Google before decoding. Your first full report and PDF are free; later reports are a one-time purchase.</p>
 
       {busy && <Scanning label={busyLabel} />}
       {notice && (

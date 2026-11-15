@@ -22,7 +22,7 @@ export default function SavedPurchasedReport() {
   }, [id, user, ready, authHeaders]);
   return <main className="max-w-3xl mx-auto px-5 ph-no-capture" data-clarity-mask="true">
     {error ? <div className="card mt-8 space-y-4"><p role="alert">{error}</p>{!user && <button className="btn-accent" onClick={() => setShowAuth(true)}>Sign in to view your private report</button>}<Link className="btn-ghost" to="/my/reports">My Reports</Link></div>
-      : !doc ? <p className="py-12">Verifying report access…</p> : <><PurchasedReportActions reportId={id} shared={doc.shared} allowShare={doc.canShare} /><ReportView readOnly session={doc.session} stored={doc.result} expiresAt={doc.expiresAt} /></>}
+      : !doc ? <p className="py-12">Verifying report access…</p> : <>{doc.freeReport && <p className="mt-6 text-sm text-[var(--accent-text)]">Your free full report · Saved in My Reports · No payment needed</p>}<PurchasedReportActions reportId={id} shared={doc.shared} allowShare={doc.canShare} /><ReportView readOnly session={doc.session} stored={doc.result} expiresAt={doc.expiresAt} /></>}
     <AuthModal open={showAuth} onClose={() => setShowAuth(false)} />
   </main>;
 }

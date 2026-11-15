@@ -4,7 +4,7 @@ import { ArrowRight, Globe2 } from "lucide-react";
 export default function SelectRegion() {
   return <main className="mx-auto max-w-3xl px-5 py-10 sm:py-16" data-testid="region-selection">
     <Globe2 size={30} className="text-[var(--accent-text)]" />
-    <p className="eyebrow mt-5">Your offer, decoded</p>
+    <p className="eyebrow mt-5">Your first full report is free</p>
     <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight text-[var(--text)] sm:text-5xl">Select your region</h1>
     <p className="mt-4 max-w-xl text-[var(--text-dim)]">Get the salary breakdown and tax estimates for your offer. Choose the region that matches your offer and billing country.</p>
     <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -21,6 +21,6 @@ export default function SelectRegion() {
         <span className="mt-6 flex items-center gap-2 font-semibold text-[var(--accent-text)]">Continue to USA <ArrowRight size={18} /></span>
       </Link>
     </div>
-    <p className="mt-6 text-xs text-[var(--text-faint)]">Sign in with Google to decode. Your purchased reports and PDF downloads stay together in one account.</p>
+    <p className="mt-6 text-xs text-[var(--text-faint)]">Sign in with Google. One free full report per account across both regions, including PDF download. No card required. Later reports are paid.</p>
   </main>;
 }

@@ -15,6 +15,12 @@ What you get:
 
 Stack: FastAPI + MongoDB (Motor) backend, React 19 (Create React App + craco, Tailwind, shadcn/ui) frontend. AI letter reading uses free OpenRouter models; everything else is plain code so the app keeps working when the AI limit is hit.
 
+### First report free
+
+Every signed-in Google account gets one full report free across India and USA, including PDF download and optional sharing. `/api/payments/access` returns account eligibility; `/api/payments/free-report` grants the report without contacting Dodo. Further reports use the existing regional checkout.
+
+The free grant uses a MongoDB transaction to save the report and the account's lifetime usage marker together. Run MongoDB as a replica set (including MongoDB Atlas) for this flow; standalone local MongoDB does not support transactions. Failed saves roll back the marker. Identical retries return the same report, while concurrent or cross-region claims cannot grant a second one. The marker stays on the account after the report's 90-day TTL or removal from My Reports.
+
 ## Run locally
 
 You need Python 3.10+, Node 18+ with yarn, and MongoDB (local install or a free Atlas cluster).

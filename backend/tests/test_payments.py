@@ -2,6 +2,7 @@
 import os
 import sys
 import unittest
+import asyncio
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace as NS
@@ -11,22 +12,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 import payments
+from pymongo.errors import DuplicateKeyError, OperationFailure
 
 
 class Orders:
     def __init__(self):
         self.docs = {}
 
-    async def insert_one(self, doc):
+    async def insert_one(self, doc, **kwargs):
+        if doc["_id"] in self.docs:
+            raise DuplicateKeyError("duplicate slot")
         self.docs[doc["_id"]] = deepcopy(doc)
 
-    async def update_one(self, query, update):
+    async def update_one(self, query, update, **kwargs):
         doc = await self.find_one(query)
         if doc:
             self.docs[doc["_id"]].update(update["$set"])
         return NS(matched_count=1 if doc else 0)
 
-    async def find_one(self, query):
+    async def find_one(self, query, **kwargs):
         return deepcopy(next((d for d in self.docs.values() if all(d.get(k) == v for k, v in query.items())), None))
 
     def find(self, query, projection):
@@ -50,6 +54,28 @@ class Orders:
         return cursor
 
 
+class TransactionClient:
+    """Rollback-capable offline fixture for the two-document grant transaction."""
+    def __init__(self, *collections):
+        self.collections = collections
+        self.lock = asyncio.Lock()
+
+    async def start_session(self):
+        owner = self
+        class Session:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *args): pass
+            async def with_transaction(self, callback):
+                async with owner.lock:
+                    before = [deepcopy(c.docs) for c in owner.collections]
+                    try:
+                        return await callback(self)
+                    except Exception:
+                        for collection, snapshot in zip(owner.collections, before): collection.docs = snapshot
+                        raise
+        return Session()
+
+
 class CheckoutTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.user = {"_id": "buyer-1"}
@@ -64,6 +90,8 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         self.env.start()
         self.addCleanup(self.env.stop)
         self.orders = Orders()
+        self.users = Orders()
+        self.users.docs["buyer-1"] = {"_id": "buyer-1", "firstFreeReportUsed": True}
         self.allowed = True
         self.country = "IN"
         self.discount_bps = 7500
@@ -115,7 +143,7 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
             return self.allowed
 
         app = FastAPI()
-        app.include_router(payments.make_router(NS(payment_orders=self.orders),
+        app.include_router(payments.make_router(NS(payment_orders=self.orders, users=self.users, client=TransactionClient(self.orders, self.users)),
                                                lambda req: {"baseSalary": req.input["baseSalary"], "country": req.country} if req.country == "us" else {"ctc": req.input["ctc"]},
                                                lambda raw, country: dict(raw), bump, lambda: "today", lambda req: "ip"))
         self.client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
@@ -284,6 +312,80 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.get("/payments/my-reports")).json()["reports"], [])
         await self.client.get(f"/payments/orders/{token}")
         self.assertEqual((await self.client.get("/payments/my-reports")).json()["reports"], [])
+
+    async def claim_free(self, country="in", salary=1800000):
+        return await self.client.post("/payments/free-report", json={"country": country, "billingCountry": country.upper(),
+                                                                   "input": {"baseSalary" if country == "us" else "ctc": salary}})
+
+    async def test_first_report_free_then_next_report_uses_checkout(self):
+        self.users.docs["buyer-1"]["firstFreeReportUsed"] = False
+        self.assertTrue((await self.client.get("/payments/access")).json()["freeReportAvailable"])
+        self.assertEqual((await self.buy()).status_code, 409)
+        with patch.object(payments, "dodo_client", side_effect=AssertionError("A free report must not contact Dodo")):
+            response = await self.claim_free()
+            self.assertEqual(response.status_code, 200)
+            rid = response.json()["reportId"]
+            self.assertEqual((await self.claim_free()).json()["reportId"], rid)
+            report = await self.client.get(f"/payments/reports/{rid}")
+            self.assertEqual(report.status_code, 200)
+            self.assertTrue(report.json()["freeReport"])
+            self.assertEqual(report.json()["result"]["ctc"], 1800000)
+            from decoder import decode
+            self.orders.docs[payments.free_order_id("buyer-1")]["result"] = decode({"ctc": 1800000})
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}/pdf")).status_code, 200)
+            self.assertEqual((await self.client.post(f"/payments/reports/{rid}/share")).status_code, 200)
+        access = (await self.client.get("/payments/access")).json()
+        self.assertFalse(access["freeReportAvailable"])
+        self.assertEqual(access["freeReportId"], rid)
+        reports = (await self.client.get("/payments/my-reports")).json()["reports"]
+        self.assertEqual(len(reports), 1)
+        self.assertTrue(reports[0]["freeReport"])
+        self.assertEqual((await self.claim_free("us", 120000)).status_code, 409)
+        self.assertEqual((await self.buy("US")).status_code, 200)
+        self.assertEqual(len(self.orders.docs), 2)
+
+    async def test_invalid_or_failed_free_save_preserves_allowance(self):
+        self.users.docs["buyer-1"]["firstFreeReportUsed"] = False
+        for invalid in (0, -1, "not-a-salary"):
+            self.assertEqual((await self.claim_free(salary=invalid)).status_code, 400)
+            self.assertFalse(self.orders.docs)
+        with patch.object(self.orders, "insert_one", AsyncMock(side_effect=OperationFailure("simulated database failure"))):
+            self.assertEqual((await self.claim_free()).status_code, 503)
+        self.assertFalse(self.orders.docs)
+        self.assertFalse(self.users.docs["buyer-1"]["firstFreeReportUsed"])
+        self.assertTrue((await self.client.get("/payments/access")).json()["freeReportAvailable"])
+        self.assertEqual((await self.claim_free()).status_code, 200)
+
+    async def test_concurrent_requests_share_one_lifetime_grant(self):
+        self.users.docs["buyer-1"]["firstFreeReportUsed"] = False
+        same = await asyncio.gather(*(self.claim_free() for _ in range(4)))
+        self.assertEqual({r.status_code for r in same}, {200})
+        self.assertEqual(len({r.json()["reportId"] for r in same}), 1)
+        self.assertEqual(len(self.orders.docs), 1)
+        self.assertEqual((await self.claim_free(salary=2000000)).status_code, 409)
+        rid = same[0].json()["reportId"]
+        await self.client.delete(f"/payments/reports/{rid}")
+        self.assertFalse((await self.client.get("/payments/access")).json()["freeReportAvailable"])
+        self.orders.docs.clear()  # Simulate the saved report's eventual TTL deletion.
+        self.assertFalse((await self.client.get("/payments/access")).json()["freeReportAvailable"])
+        self.assertEqual((await self.claim_free()).status_code, 409)
+
+    async def test_distinct_concurrent_offers_cannot_both_be_free(self):
+        self.users.docs["buyer-1"]["firstFreeReportUsed"] = False
+        results = await asyncio.gather(self.claim_free("in", 1800000), self.claim_free("us", 120000))
+        self.assertEqual(sorted(r.status_code for r in results), [200, 409])
+        self.assertEqual(len(self.orders.docs), 1)
+
+    async def test_free_report_requires_login_and_remains_private(self):
+        from fastapi import HTTPException
+        self.users.docs["buyer-1"]["firstFreeReportUsed"] = False
+        with patch.object(payments.auth, "require_user", AsyncMock(side_effect=HTTPException(401, "Please sign in"))):
+            self.assertEqual((await self.claim_free()).status_code, 401)
+            self.assertEqual((await self.client.get("/payments/access")).status_code, 401)
+        rid = (await self.claim_free()).json()["reportId"]
+        with patch.object(payments.auth, "get_session_user", AsyncMock(return_value={"_id": "other-buyer"})):
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}")).status_code, 404)
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}/pdf")).status_code, 404)
 
 
 if __name__ == "__main__":

@@ -410,6 +410,13 @@ async def indexes():
     await db.reports.create_index("ownerUserId")
     await db.sessions.create_index("expiresAt", expireAfterSeconds=0)
     await db.usage.create_index("expiresAt", expireAfterSeconds=0)
+    # Read-only preflight: verify the production database supports the atomic
+    # free-report grant before making this deployment available to customers.
+    async def transaction_probe(session):
+        await db.users.find_one({}, {"_id": 1}, session=session)
+    async with await client.start_session() as session:
+        await session.with_transaction(transaction_probe)
+    logging.getLogger("server").info("First-free-report transaction check passed")
 
 
 @app.on_event("shutdown")
