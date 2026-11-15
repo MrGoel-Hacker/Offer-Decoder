@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { http, errMsg } from "@/lib/api";
 import { ReportView } from "@/components/report/ReportView";
+import { PurchasedReportActions } from "@/components/PurchasedReportActions";
+import { useAuth } from "@/lib/auth";
 
 export default function PurchasedReport() {
+  const { authHeaders } = useAuth();
   const { token } = useParams();
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState("");
@@ -16,7 +19,7 @@ export default function PurchasedReport() {
     setDoc(null);
     async function check() {
       try {
-        const { data } = await http.get(`/payments/orders/${token}`);
+        const { data } = await http.get(`/payments/orders/${token}`, { headers: authHeaders() });
         if (stopped) return;
         setDoc(data);
         if (data.status === "pending" && ++checks < 12) timer = setTimeout(check, 5000);
@@ -26,9 +29,9 @@ export default function PurchasedReport() {
     }
     check();
     return () => { stopped = true; clearTimeout(timer); };
-  }, [token, attempt]);
+  }, [token, attempt, authHeaders]);
   const checkoutUrl = sessionStorage.getItem(`offerdecode:checkout:${token}`);
-  if (doc?.status === "paid") return <main data-clarity-mask="true" className="max-w-3xl mx-auto px-5 ph-no-capture"><p className="mt-6 text-sm text-[var(--accent-text)]">Payment verified · Bookmark this private link to reopen your report.</p><ReportView readOnly session={doc.session} stored={doc.result} expiresAt={doc.expiresAt} /></main>;
+  if (doc?.status === "paid") return <main data-clarity-mask="true" className="max-w-3xl mx-auto px-5 ph-no-capture"><p className="mt-6 text-sm text-[var(--accent-text)]">Payment verified{doc.reportId ? " · Saved in the purchasing account's My Reports" : " · Bookmark this private link to reopen your report"}.</p><PurchasedReportActions token={token} reportId={doc.reportId} shared={doc.shared} allowShare={doc.canShare} /><ReportView readOnly session={doc.session} stored={doc.result} expiresAt={doc.expiresAt} /></main>;
   return <main className="max-w-3xl mx-auto px-5 py-12 space-y-5">
     <h1 className="text-3xl font-display font-bold">{doc?.status === "review_required" ? "Payment needs review" : doc?.status === "failed" ? "Payment wasn't completed" : "Verifying your payment"}</h1>
     <p className="text-[var(--text-dim)]">{error || (doc?.status === "review_required" ? "This payment doesn't currently grant access. It may have been refunded or disputed, or its details may not match the order. Don't pay again; contact the website owner with your Dodo receipt." : "Your report unlocks after payment is confirmed. If you have already paid, don't pay again; retry verification.")}</p>

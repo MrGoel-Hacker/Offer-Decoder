@@ -2,15 +2,21 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { http, errMsg } from "@/lib/api";
 import { ReportView } from "@/components/report/ReportView";
+import { useAuth } from "@/lib/auth";
 
 export default function SharedReport() {
+  const { ready, user, authHeaders } = useAuth();
   const { id } = useParams();
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    http.get(`/reports/${id}`).then((r) => setDoc(r.data)).catch((e) => setError(errMsg(e, "Report not found or expired.")));
-  }, [id]);
+    if (!ready) return;
+    let stopped = false;
+    setError(""); setDoc(null);
+    http.get(`/reports/${id}`, { headers: authHeaders() }).then((r) => { if (!stopped) setDoc(r.data); }).catch((e) => { if (!stopped) setError(errMsg(e, "Report not found or expired.")); });
+    return () => { stopped = true; };
+  }, [id, ready, user, authHeaders]);
 
   return (
     <main className="max-w-3xl mx-auto px-5" data-testid="shared-report-page">

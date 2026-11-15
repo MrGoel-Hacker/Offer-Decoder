@@ -15,7 +15,7 @@ export default function Privacy() {
         What happens to your offer letter
       </h1>
       <p className="fade-up mt-4 max-w-xl text-sm text-[var(--text-dim)]" style={{ animationDelay: "60ms" }}>
-        Decoding an offer needs no account. Sign-in with Google is only needed when you save a report. This page explains, in plain terms,
+          Sign in with Google before decoding an offer. Purchased reports are saved to your account after payment verification. This page explains, in plain terms,
         what is processed when you use it. Last updated: November 2026.
       </p>
 
@@ -64,10 +64,10 @@ export default function Privacy() {
 
         <Section title="Sign-in and your account">
           <p>
-            Decoding, Quick scan and manual entry work without any sign-in. If you want to save a report, you sign in with Google
+            Decoding, Quick scan and checkout require sign-in with Google
             (Google's own sign-in window - we never see your Google password). We then store your name, email address and Google
             account ID so your saved reports belong to you, plus a sign-in session that expires after 30 days. That is the whole
-            account. Your offer letters are not attached to your identity beyond the reports you explicitly save.
+            account. Purchase snapshots are linked to your account; uploaded offer files are never stored.
           </p>
         </Section>
 
@@ -97,7 +97,7 @@ export default function Privacy() {
         <Section title="Report purchases and Dodo Payments">
           <p>When paid reports are enabled, starting checkout saves the salary inputs, clause flags, notes, company, role and calculated result for that one report for up to 90 days, even if checkout is not completed. Uploaded PDF and image files are not saved.</p>
           <p>Dodo Payments processes checkout and payment details. OfferDecode receives payment status and identifiers, not your full card details. We verify payment on the server before showing the purchased report. Payment providers may retain transaction records under their own policies.</p>
-          <p>Purchased reports use a separate private purchase link. Anyone with that link can view it; keep it safe and bookmark it. It is not automatically added to My reports. Checkout and purchased-report pages do not load our analytics scripts.</p>
+          <p>New purchased reports are automatically listed in the purchasing account's My Reports after payment verification. You can download a PDF and explicitly create a share link. Anyone with a share link or the private checkout return link can view the report; keep these links safe. Removing a purchase from My Reports hides it from the list; its purchase record remains until the 90-day expiry. Downloaded PDFs stay on your device. Direct visits to checkout and purchased-report pages do not load our analytics scripts.</p>
         </Section>
 
         <Section title="Rate limiting">

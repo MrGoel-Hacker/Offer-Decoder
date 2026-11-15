@@ -13,6 +13,7 @@ from fastapi import APIRouter, FastAPI, File, Form, HTTPException, Request, Uplo
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -381,9 +382,16 @@ app.include_router(api)
 
 @app.middleware("http")
 async def payment_privacy(request: Request, call_next):
+    if request.method == "POST" and request.url.path in (
+        "/api/decode", "/api/quickscan", "/api/extract/text", "/api/extract/pdf", "/api/extract/images"
+    ):
+        try:
+            await auth.require_user(db, request)
+        except HTTPException as exc:
+            return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers={"Cache-Control": "no-store"})
     response = await call_next(request)
     response.headers["Referrer-Policy"] = "no-referrer"
-    if request.url.path.startswith(("/api/payments", "/checkout/")):
+    if request.url.path.startswith(("/api/payments", "/checkout/", "/paid-report/", "/my/reports")):
         response.headers["Cache-Control"] = "no-store"
     return response
 app.add_middleware(
@@ -395,6 +403,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def indexes():
     await db.payment_orders.create_index("expiresAt", expireAfterSeconds=0)
+    await db.payment_orders.create_index("ownerUserId")
+    await db.payment_orders.create_index("reportId", unique=True, sparse=True)
     await db.ai_cache.create_index("createdAt", expireAfterSeconds=ai_extract.CACHE_TTL_SECONDS)
     await db.reports.create_index("expiresAt", expireAfterSeconds=0)
     await db.reports.create_index("ownerUserId")

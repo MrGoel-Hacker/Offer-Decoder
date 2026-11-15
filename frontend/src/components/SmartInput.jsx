@@ -5,10 +5,13 @@ import { http, errMsg } from "@/lib/api";
 import { SAMPLE_LETTER_IN, SAMPLE_LETTER_US } from "@/lib/fields";
 import { aiToSession, runQuickScan } from "@/lib/extract";
 import { AiNotice, Scanning } from "@/components/AiNotice";
+import { useAuth } from "@/lib/auth";
 
 const IMG_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
+export const SmartInput = ({ country, onDecoded, onQuickScan, authorize }) => {
+  const { authHeaders } = useAuth();
+  const [pasteOpen, setPasteOpen] = useState(false);
   const [text, setText] = useState("");
   const [pdf, setPdf] = useState(null);
   const [images, setImages] = useState([]);
@@ -48,7 +51,7 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
     resetNotice();
   };
 
-  const sample = () => onText(country === "us" ? SAMPLE_LETTER_US : SAMPLE_LETTER_IN);
+  const sample = () => { setPasteOpen(true); onText(country === "us" ? SAMPLE_LETTER_US : SAMPLE_LETTER_IN); };
 
   const decode = async () => {
     setBusy(true);
@@ -59,14 +62,14 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
         const fd = new FormData();
         fd.append("file", pdf);
         fd.append("country", country);
-        ({ data } = await http.post("/extract/pdf", fd));
+        ({ data } = await http.post("/extract/pdf", fd, { headers: authHeaders() }));
       } else if (images.length) {
         const fd = new FormData();
         images.forEach((f) => fd.append("files", f));
         fd.append("country", country);
-        ({ data } = await http.post("/extract/images", fd));
+        ({ data } = await http.post("/extract/images", fd, { headers: authHeaders() }));
       } else {
-        ({ data } = await http.post("/extract/text", { text, country }));
+        ({ data } = await http.post("/extract/text", { text, country }, { headers: authHeaders() }));
       }
       if (data.ok) onDecoded(aiToSession(data, "ai", country));
       else setNotice({ message: data.message, pdfText: data.text || "" });
@@ -77,8 +80,8 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
     }
   };
 
-  const scan = () => runQuickScan(text, onQuickScan, country).catch((e) => toast.error(errMsg(e)));
-  const scanPdfText = () => runQuickScan(notice.pdfText, onQuickScan, country).catch((e) => toast.error(errMsg(e)));
+  const scan = () => runQuickScan(text, onQuickScan, country, authHeaders()).catch((e) => toast.error(errMsg(e)));
+  const scanPdfText = () => runQuickScan(notice.pdfText, onQuickScan, country, authHeaders()).catch((e) => toast.error(errMsg(e)));
 
   const canDecode = !busy && (pdf || images.length > 0 || text.trim().length >= 40);
   const busyLabel = pdf ? "Reading the PDF" : images.length ? "Reading the images" : "Reading your letter";
@@ -103,13 +106,19 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
         data-testid="smart-input-file-input"
       />
       <div className="flex items-center justify-between gap-3">
-        <label htmlFor="offer-text" className="font-display text-lg font-bold text-[var(--text)]">
-          {country === "us" ? "Your US offer letter" : "Your offer letter"}
-        </label>
+        <h2 className="font-display text-lg font-bold text-[var(--text)]">Upload your offer letter</h2>
         <button type="button" className="text-xs font-semibold text-[var(--accent-text)] hover:underline" onClick={sample} data-testid="sample-button">
           Try a sample
         </button>
       </div>
+
+      {!hasFiles && <div className="mt-4 rounded-2xl border-2 border-dashed border-emerald-500/60 bg-emerald-500/[0.07] px-5 py-7 text-center" data-testid="upload-dropzone">
+        <FileUp size={32} className="mx-auto text-[var(--accent-text)]" />
+        <p className="mt-3 font-semibold text-[var(--text)]">Drop your PDF here</p>
+        <p className="mt-1 text-xs text-[var(--text-dim)]">PDF up to 10 MB · Scanned PDFs and photos welcome</p>
+        <button type="button" disabled={busy} onClick={() => fileRef.current?.click()} className="btn-accent mt-4 w-full sm:w-auto !px-8 !py-3.5" data-testid="browse-files-button"><FileUp size={18} /> Choose PDF or photos</button>
+        <p className="mt-3 text-xs text-[var(--text-faint)]">Your file is processed in memory and never stored.</p>
+      </div>}
 
       {hasFiles ? (
         <div className="mt-4 space-y-2" data-testid="file-chips">
@@ -129,7 +138,8 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
             {pdf ? "Scanned PDFs are fine - we read the pages visually." : `Up to 4 photos (${images.length}/4).`} Processed in memory, never stored.
           </p>
         </div>
-      ) : (
+      ) : pasteOpen ? (
+        <label className="mt-4 block text-sm text-[var(--text-dim)]">Or paste your offer text
         <textarea
           id="offer-text"
           rows={8}
@@ -141,36 +151,33 @@ export const SmartInput = ({ country, onDecoded, onQuickScan }) => {
           onChange={(e) => onText(e.target.value)}
           data-testid="offer-text-input"
         />
-      )}
+        </label>
+      ) : null}
 
       <div className="mt-4 flex flex-col sm:flex-row gap-3">
-        <button type="button" className="btn-accent" disabled={!canDecode} onClick={decode} data-testid="decode-ai-button">
+        <button type="button" className="btn-accent" disabled={!canDecode} onClick={() => authorize(decode)} data-testid="decode-ai-button">
           <Sparkles size={16} /> Decode with AI
         </button>
-        {!hasFiles && (
-          <button type="button" className="btn-ghost" disabled={busy || !text.trim()} onClick={scan} data-testid="quick-scan-button">
+        {!hasFiles && pasteOpen && (
+          <button type="button" className="btn-ghost" disabled={busy || !text.trim()} onClick={() => authorize(scan)} data-testid="quick-scan-button">
             <ScanText size={16} /> Quick scan <span className="text-[10px] uppercase tracking-wider text-[var(--warn-strong)]">Beta</span>
           </button>
         )}
-        <button type="button" className="btn-ghost" onClick={() => onQuickScan({})} data-testid="manual-entry-button">Type the numbers</button>
+        {!hasFiles && !pasteOpen && <button type="button" className="btn-ghost" onClick={() => setPasteOpen(true)}>Paste offer text</button>}
+        <button type="button" className="btn-ghost" onClick={() => authorize(() => onQuickScan({}))} data-testid="manual-entry-button">Enter numbers manually</button>
       </div>
-      <p className="mt-3 text-xs text-[var(--text-faint)]">
-        <button type="button" onClick={() => fileRef.current?.click()} className="font-semibold text-[var(--text-dim)] underline underline-offset-2 hover:text-[var(--accent-text)]" data-testid="browse-files-button">
-          Choose a PDF or photos
-        </button>{" "}
-        or paste the letter. Quick scan runs offline (no AI) and pre-fills the form for you to verify.
-      </p>
+      <p className="mt-3 text-xs text-[var(--text-faint)]">Sign in with Google before decoding. Review your offer, then pay once to unlock the full report and downloadable PDF.</p>
 
       {busy && <Scanning label={busyLabel} />}
       {notice && (
         <AiNotice message={notice.message}>
           {notice.pdfText && notice.pdfText.length > 20 && (
-            <button type="button" className="btn-ghost !py-2 !px-4" onClick={scanPdfText} data-testid="pdf-quick-scan-button">Quick scan the PDF text</button>
+            <button type="button" className="btn-ghost !py-2 !px-4" onClick={() => authorize(scanPdfText)} data-testid="pdf-quick-scan-button">Quick scan the PDF text</button>
           )}
           {!hasFiles && text.trim() && (
-            <button type="button" className="btn-ghost !py-2 !px-4" onClick={scan} data-testid="notice-quick-scan-button">Quick scan instead</button>
+            <button type="button" className="btn-ghost !py-2 !px-4" onClick={() => authorize(scan)} data-testid="notice-quick-scan-button">Quick scan instead</button>
           )}
-          <button type="button" className="btn-ghost !py-2 !px-4" onClick={() => onQuickScan({})} data-testid="notice-manual-button">Enter manually</button>
+          <button type="button" className="btn-ghost !py-2 !px-4" onClick={() => authorize(() => onQuickScan({}))} data-testid="notice-manual-button">Enter manually</button>
         </AiNotice>
       )}
     </div>

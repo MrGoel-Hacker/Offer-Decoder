@@ -10,6 +10,7 @@ import { Flags } from "@/components/report/Flags";
 import { Tips } from "@/components/report/Tips";
 import { ShareBar } from "@/components/report/ShareBar";
 import { ReportCheckout } from "@/components/ReportCheckout";
+import { useAuth } from "@/lib/auth";
 
 const SOURCE = { ai: "Read by AI", quickscan: "Quick scan · Beta", manual: "Manual entry" };
 
@@ -31,6 +32,7 @@ const ReportTop = ({ session, onReset, readOnly, expiresAt }) => (
 );
 
 const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
+  const { authHeaders } = useAuth();
   const [input, setInput] = useState(session.input);
   const [result, setResult] = useState(stored || null);
   const [syncing, setSyncing] = useState(false);
@@ -44,7 +46,7 @@ const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
     setError("");
     const t = setTimeout(async () => {
       try {
-        const { data } = await http.post("/decode", { input: toPayload(input), clauseFlags: session.clauseFlags || [], notes: session.notes || "", country: session.country || "in" });
+        const { data } = await http.post("/decode", { input: toPayload(input), clauseFlags: session.clauseFlags || [], notes: session.notes || "", country: session.country || "in" }, { headers: authHeaders() });
         if (my === seq.current) setResult(data);
       } catch (e) {
         if (my === seq.current) setError(e?.response?.status === 402
@@ -55,7 +57,7 @@ const FreeReportView = ({ session, onReset, readOnly, stored, expiresAt }) => {
       }
     }, 250);
     return () => { clearTimeout(t); ++seq.current; };
-  }, [input, readOnly, session.clauseFlags, session.notes, session.country]);
+  }, [input, readOnly, session.clauseFlags, session.notes, session.country, authHeaders]);
 
   const set = (k, v) => setInput((s) => ({ ...s, [k]: v }));
 

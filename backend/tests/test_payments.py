@@ -5,7 +5,7 @@ import unittest
 from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace as NS
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi import FastAPI
@@ -21,14 +21,42 @@ class Orders:
         self.docs[doc["_id"]] = deepcopy(doc)
 
     async def update_one(self, query, update):
-        self.docs[query["_id"]].update(update["$set"])
+        doc = await self.find_one(query)
+        if doc:
+            self.docs[doc["_id"]].update(update["$set"])
+        return NS(matched_count=1 if doc else 0)
 
     async def find_one(self, query):
-        return deepcopy(self.docs.get(query["_id"]))
+        return deepcopy(next((d for d in self.docs.values() if all(d.get(k) == v for k, v in query.items())), None))
+
+    def find(self, query, projection):
+        def matches(doc):
+            for k, v in query.items():
+                if isinstance(v, dict):
+                    if "$exists" in v and (k in doc) != v["$exists"]: return False
+                    if "$ne" in v and doc.get(k) == v["$ne"]: return False
+                    if "$gt" in v and doc.get(k) <= v["$gt"]: return False
+                elif doc.get(k) != v: return False
+            return True
+        class Cursor:
+            def sort(self, *args): return self
+            def limit(self, *args): return self
+            def __aiter__(self):
+                async def items():
+                    for doc in self.docs: yield deepcopy(doc)
+                return items()
+        cursor = Cursor()
+        cursor.docs = [d for d in self.docs.values() if matches(d)]
+        return cursor
 
 
 class CheckoutTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
+        self.user = {"_id": "buyer-1"}
+        self.auth = patch.object(payments.auth, "require_user", AsyncMock(return_value=self.user))
+        self.session_user = patch.object(payments.auth, "get_session_user", AsyncMock(return_value=self.user))
+        self.auth.start(); self.session_user.start()
+        self.addCleanup(self.auth.stop); self.addCleanup(self.session_user.stop)
         self.env = patch.dict(os.environ, {
             "DODO_PAYMENTS_ENABLED": "true", "APP_PUBLIC_URL": "https://offerdecoder.online",
             "DODO_PRODUCT_IN": "pdt_india", "DODO_PRODUCT_US": "pdt_usa",
@@ -172,6 +200,76 @@ class CheckoutTests(unittest.IsolatedAsyncioTestCase):
             free = await client.post("/api/decode", json=payload)
             self.assertEqual(free.status_code, 200)
             self.assertEqual(free.json()["country"], "us")
+
+    async def test_checkout_requires_login_and_attaches_owner(self):
+        from fastapi import HTTPException
+        with patch.object(payments.auth, "require_user", AsyncMock(side_effect=HTTPException(401, "Please sign in"))):
+            self.assertEqual((await self.buy()).status_code, 401)
+        await self.buy()
+        doc = next(iter(self.orders.docs.values()))
+        self.assertEqual(doc["ownerUserId"], "buyer-1")
+        self.assertTrue(doc["reportId"])
+        self.assertFalse(doc["shared"])
+
+    async def test_pdf_and_share_require_verified_payment_and_audience(self):
+        from decoder import decode
+        token = (await self.buy()).json()["reportToken"]
+        doc = next(iter(self.orders.docs.values()))
+        doc["result"] = decode({"ctc": 1800000})
+        rid = doc["reportId"]
+        self.payment.status = "processing"
+        self.assertEqual((await self.client.get(f"/payments/orders/{token}/pdf")).status_code, 403)
+        self.assertEqual((await self.client.post(f"/payments/reports/{rid}/share")).status_code, 403)
+        self.assertFalse(doc["shared"])
+        self.payment.status = "succeeded"
+        pdf = await self.client.get(f"/payments/orders/{token}/pdf")
+        self.assertEqual(pdf.status_code, 200)
+        self.assertTrue(pdf.content.startswith(b"%PDF-"))
+        from io import BytesIO
+        from pypdf import PdfReader
+        contents = "\n".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+        self.assertIn("Fixed in-hand per month", contents)
+        self.assertIn("Negotiation tips", contents)
+        self.assertIn("attachment", pdf.headers["content-disposition"])
+        with patch.object(payments.auth, "get_session_user", AsyncMock(return_value={"_id": "other-buyer"})):
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}")).status_code, 404)
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}/pdf")).status_code, 404)
+        with patch.object(payments.auth, "require_user", AsyncMock(return_value={"_id": "other-buyer"})):
+            self.assertEqual((await self.client.post(f"/payments/reports/{rid}/share")).status_code, 404)
+        self.assertEqual((await self.client.post(f"/payments/reports/{rid}/share")).status_code, 200)
+        with patch.object(payments.auth, "get_session_user", AsyncMock(return_value=None)):
+            public = await self.client.get(f"/payments/reports/{rid}")
+            self.assertEqual(public.status_code, 200)
+            self.assertFalse(public.json()["canShare"])
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}/pdf")).status_code, 200)
+            self.payment.refunds = ["refund"]
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}/pdf")).status_code, 403)
+            self.assertEqual((await self.client.get(f"/payments/reports/{rid}")).status_code, 403)
+
+    async def test_extraction_requires_sign_in_before_using_ai(self):
+        from fastapi import HTTPException
+        with patch.dict(os.environ, {"MONGO_URL": "mongodb://127.0.0.1:27017", "DB_NAME": "offline_payment_test"}):
+            import server
+        with patch.object(payments.auth, "require_user", AsyncMock(side_effect=HTTPException(401, "Please sign in"))):
+            async with AsyncClient(transport=ASGITransport(app=server.app), base_url="http://test") as client:
+                for path in ("/api/decode", "/api/quickscan", "/api/extract/text", "/api/extract/pdf", "/api/extract/images"):
+                    self.assertEqual((await client.post(path, json={})).status_code, 401)
+
+    async def test_paid_purchase_appears_only_in_owners_library(self):
+        token = (await self.buy()).json()["reportToken"]
+        self.assertEqual((await self.client.get("/payments/my-reports")).json()["reports"], [])
+        await self.client.get(f"/payments/orders/{token}")
+        items = (await self.client.get("/payments/my-reports")).json()["reports"]
+        self.assertEqual(len(items), 1)
+        self.assertTrue(items[0]["paid"])
+        self.assertNotIn("result", items[0])
+        with patch.object(payments.auth, "require_user", AsyncMock(return_value={"_id": "other-buyer"})):
+            self.assertEqual((await self.client.get("/payments/my-reports")).json()["reports"], [])
+        rid = items[0]["id"]
+        self.assertEqual((await self.client.delete(f"/payments/reports/{rid}")).status_code, 200)
+        self.assertEqual((await self.client.get("/payments/my-reports")).json()["reports"], [])
+        await self.client.get(f"/payments/orders/{token}")
+        self.assertEqual((await self.client.get("/payments/my-reports")).json()["reports"], [])
 
 
 if __name__ == "__main__":
