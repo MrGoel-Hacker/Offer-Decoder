@@ -156,7 +156,7 @@ export const SmartInput = ({ country, onDecoded, onQuickScan, authorize }) => {
 
       <div className="mt-4 flex flex-col sm:flex-row gap-3">
         <button type="button" className="btn-accent" disabled={!canDecode} onClick={() => authorize(decode)} data-testid="decode-ai-button">
-          <Sparkles size={16} /> Decode with AI
+          <Sparkles size={16} /> Decode
         </button>
         {!hasFiles && pasteOpen && (
           <button type="button" className="btn-ghost" disabled={busy || !text.trim()} onClick={() => authorize(scan)} data-testid="quick-scan-button">
